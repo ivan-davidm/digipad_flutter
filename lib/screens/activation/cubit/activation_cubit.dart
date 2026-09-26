@@ -12,9 +12,9 @@ class ActivationCubit extends Cubit<ActivationState> {
   DateTime? _lastOnlineAccessUpdate;
   static const int _accessUpdateThrottleMinutes = 5;
 
-  // ─── DEV FLAG ────────────────────────────────────────────────────────────
+  // ─── DEV FLAGS ───────────────────────────────────────────────────────────
   // Set to true to skip all activation checks (local testing only).
-  static const bool kBypassActivation = true;
+  static const bool kBypassActivation = false;
   // ─────────────────────────────────────────────────────────────────────────
 
   ActivationCubit(this._service) : super(const ActivationState());
@@ -38,36 +38,17 @@ class ActivationCubit extends Cubit<ActivationState> {
         return;
       }
 
-      final interactions = await _service.getOfflineInteractionsCount();
-      if (_service.isOfflineLimitReached(interactions)) {
-        emit(
-          state.copyWith(
-            status: ActivationStatus.blockedOffline,
-            errorMessage: null,
-          ),
-        );
+      // Lifetime activation: once a device has been approved it works offline
+      // permanently — no interaction counter, no expiry.
+      final isLocallyApproved = await _service.isLocallyApproved();
+      if (isLocallyApproved) {
+        emit(state.copyWith(status: ActivationStatus.approved, email: savedEmail));
         return;
-      } else {
-        final isLocallyApproved = await _service.isLocallyApproved();
-
-        if (isLocallyApproved) {
-          emit(
-            state.copyWith(
-              status: ActivationStatus.approved,
-              email: savedEmail,
-            ),
-          );
-          return;
-        } else {
-          emit(
-            state.copyWith(
-              status: ActivationStatus.error,
-              errorMessage: 'activationNoInternet',
-            ),
-          );
-          return;
-        }
       }
+
+      // Not yet approved: internet is required to verify.
+      emit(state.copyWith(status: ActivationStatus.error, errorMessage: 'activationNoInternet'));
+      return;
     }
 
     if (savedEmail == null) {
@@ -134,29 +115,13 @@ class ActivationCubit extends Cubit<ActivationState> {
     final hasInternet = await _service.checkInternetConnection();
 
     if (!hasInternet) {
-      final interactions = await _service.getOfflineInteractionsCount();
+      // Lifetime activation: locally approved devices always have offline access.
+      final isLocallyApproved = await _service.isLocallyApproved();
+      if (isLocallyApproved) return;
 
-      if (_service.isOfflineLimitReached(interactions)) {
-        if (state.status != ActivationStatus.blockedOffline) {
-          emit(
-            state.copyWith(
-              status: ActivationStatus.blockedOffline,
-              errorMessage: null,
-            ),
-          );
-        }
-        return;
-      }
-
-      await _service.incrementOfflineInteractions();
-
-      if (_service.isOfflineLimitReached(interactions + 1)) {
-        emit(
-          state.copyWith(
-            status: ActivationStatus.blockedOffline,
-            errorMessage: null,
-          ),
-        );
+      // Not approved + no internet → block immediately.
+      if (state.status != ActivationStatus.blockedOffline) {
+        emit(state.copyWith(status: ActivationStatus.blockedOffline, errorMessage: null));
       }
     } else {
       if (state.status == ActivationStatus.notRegistered) return;

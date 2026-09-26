@@ -627,6 +627,7 @@ class _MeasurementCaptureScreenState extends State<MeasurementCaptureScreen>
           child: Image.file(
             File(_lastPhotoPath!),
             fit: BoxFit.cover,
+            cacheWidth: 144,
             key: ValueKey(_lastPhotoPath),
           ),
         ),
@@ -1072,6 +1073,7 @@ class InternalGalleryDialogState extends State<InternalGalleryDialog> {
                                       child: Image.file(
                                         file,
                                         fit: BoxFit.cover,
+                                        cacheWidth: 300,
                                       ),
                                     ),
                                     if (_selecting)

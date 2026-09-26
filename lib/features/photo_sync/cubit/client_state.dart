@@ -11,7 +11,7 @@ class ClientScanning extends ClientState {
   const ClientScanning();
 }
 
-/// Found the saved/scanned Totem name — actively searching via Nearby discovery.
+/// Found the saved/scanned Totem — actively searching (LAN + Nearby in parallel).
 class ClientDiscovering extends ClientState {
   final String targetName;
   const ClientDiscovering({required this.targetName});
@@ -28,12 +28,18 @@ class ClientConnected extends ClientState {
   final int sentCount;
   final bool isSending;
 
+  /// `'wifi'` (LAN HTTP) or `'nearby'` (Bluetooth / Nearby Connections).
+  final String transport;
+
   const ClientConnected({
     required this.endpointId,
     required this.endpointName,
     this.sentCount = 0,
     this.isSending = false,
+    this.transport = 'nearby',
   });
+
+  bool get isLan => transport == 'wifi';
 
   ClientConnected copyWith({bool? isSending, int? sentCount}) {
     return ClientConnected(
@@ -41,6 +47,7 @@ class ClientConnected extends ClientState {
       endpointName: endpointName,
       sentCount: sentCount ?? this.sentCount,
       isSending: isSending ?? this.isSending,
+      transport: transport,
     );
   }
 }
@@ -52,7 +59,16 @@ class ClientSendSuccess extends ClientState {
 
 class ClientError extends ClientState {
   final String message;
+
   /// If set, user can tap "Retry" to re-discover the same Totem.
   final String? lastTotemName;
-  const ClientError(this.message, {this.lastTotemName});
+
+  /// Actionable, non-technical steps to show under the error.
+  final List<String> checklist;
+
+  const ClientError(
+    this.message, {
+    this.lastTotemName,
+    this.checklist = const [],
+  });
 }

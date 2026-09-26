@@ -7,6 +7,7 @@ import 'package:nearby_connections/nearby_connections.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:digipad_flutter/data/local/gallery_storage.dart';
+import 'package:digipad_flutter/features/photo_sync/lan_sync_service.dart';
 import 'package:digipad_flutter/features/photo_sync/photo_sync_preferences.dart';
 import 'package:digipad_flutter/features/photo_sync/photo_sync_service.dart';
 import 'totem_state.dart';
@@ -14,16 +15,20 @@ import 'totem_state.dart';
 class TotemCubit extends Cubit<TotemState> {
   final GalleryStorage _storage;
   final PhotoSyncService _service;
+  final LanSyncService _lan;
   final PhotoSyncPreferences _prefs;
 
   StreamSubscription<PhotoSyncConnectionEvent>? _connSub;
   StreamSubscription<PhotoSyncFile>? _fileSub;
+  StreamSubscription<LanIncomingFile>? _lanFileSub;
 
   TotemCubit({
     required GalleryStorage storage,
     PhotoSyncService? service,
+    LanSyncService? lan,
   }) : _storage = storage,
        _service = service ?? PhotoSyncService.instance,
+       _lan = lan ?? LanSyncService.instance,
        _prefs = PhotoSyncPreferences(),
        super(const TotemIdle());
 
@@ -33,14 +38,9 @@ class TotemCubit extends Cubit<TotemState> {
     if (state is TotemActive) return;
     emit(const TotemStarting());
 
+    // Permissions never block the LAN transport (it needs none); they only
+    // gate Nearby Connections. We request them but tolerate a partial grant.
     final granted = await _service.requestPermissions();
-    if (!granted) {
-      emit(const TotemError(
-        'Se necesitan permisos de Bluetooth y Ubicación.\n'
-        'Habilitarlos en Ajustes › Aplicaciones › Digipad › Permisos.',
-      ));
-      return;
-    }
 
     await _storage.init();
 
@@ -48,21 +48,48 @@ class TotemCubit extends Cubit<TotemState> {
     _connSub = _service.connectionEvents.listen(_onConnectionEvent);
 
     _fileSub?.cancel();
-    _fileSub = _service.fileReceived.listen(_onFileReceived);
+    _fileSub = _service.fileReceived.listen(_onNearbyFileReceived);
+
+    _lanFileSub?.cancel();
+    _lanFileSub = _lan.fileReceived.listen(_onLanFileReceived);
 
     final name = await _prefs.getOrCreateTotemName();
-    final ok = await _service.startAdvertising(name);
 
-    if (!ok) {
+    // ── Transport 1: Nearby Connections (unchanged behaviour) ──────────────
+    bool nearbyOk = false;
+    if (granted) {
+      nearbyOk = await _service.startAdvertising(name);
+    } else {
+      debugPrint('[TotemCubit] permissions partial — skipping Nearby advertise');
+    }
+
+    // ── Transport 2: LAN HTTP + UDP beacon (always attempted) ──────────────
+    List<String> lanHosts = const [];
+    try {
+      lanHosts = await _lan.startServer(name);
+    } catch (e) {
+      debugPrint('[TotemCubit] LAN server start failed: $e');
+    }
+
+    if (!nearbyOk && lanHosts.isEmpty) {
       emit(const TotemError(
-        'No se pudo iniciar el Tótem.\n'
-        'Verificá que Bluetooth, WiFi y Ubicación estén activos.',
+        'No se pudo iniciar el Tótem.\n\n'
+        'Verificá que el dispositivo tenga:\n'
+        '• WiFi encendido (misma red que los operadores), o\n'
+        '• Bluetooth + Ubicación encendidos\n\n'
+        'y que los permisos de la app estén concedidos.',
       ));
       return;
     }
 
     final images = await _storage.loadImages();
-    emit(TotemActive(totemName: name, photoCount: images.length));
+    emit(TotemActive(
+      totemName: name,
+      photoCount: images.length,
+      nearbyOk: nearbyOk,
+      lanHosts: lanHosts,
+      lanPort: _lan.port,
+    ));
   }
 
   // ── Stop ───────────────────────────────────────────────────────────────────
@@ -70,11 +97,13 @@ class TotemCubit extends Cubit<TotemState> {
   Future<void> stopTotem() async {
     _connSub?.cancel();
     _fileSub?.cancel();
+    _lanFileSub?.cancel();
     await _service.stopAll();
+    await _lan.stopServer();
     emit(const TotemIdle());
   }
 
-  // ── Connection events ──────────────────────────────────────────────────────
+  // ── Connection events (Nearby) ─────────────────────────────────────────────
 
   void _onConnectionEvent(PhotoSyncConnectionEvent event) {
     final current = state;
@@ -88,41 +117,66 @@ class TotemCubit extends Cubit<TotemState> {
     emit(current.copyWith(connectedClientIds: clients));
   }
 
-  // ── File received ──────────────────────────────────────────────────────────
+  // ── Incoming files ─────────────────────────────────────────────────────────
 
-  Future<void> _onFileReceived(PhotoSyncFile file) async {
+  Future<void> _onNearbyFileReceived(PhotoSyncFile file) async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      final syncDir = Directory('${dir.path}/totem_received');
-      if (!await syncDir.exists()) await syncDir.create(recursive: true);
-
-      final ext = file.fileName.contains('.')
-          ? file.fileName.split('.').last
-          : 'jpg';
-      final destPath =
-          '${syncDir.path}/photo_${DateTime.now().millisecondsSinceEpoch}.$ext';
-
+      final destPath = await _newDestPath(file.fileName);
       // file.tempPath is a content:// URI on Android 10+.
-      // We must use the plugin's ContentResolver-backed copy method instead of
-      // File.copy(), which cannot open content URIs.
       await Nearby().copyFileAndDeleteOriginal(file.tempPath, destPath);
-
-      final dest = File(destPath);
-      await _storage.saveImageWithAngle(
-        dest,
-        file.angle,
+      await _persist(
+        File(destPath),
+        angle: file.angle,
         patientFirstName: file.patientFirstName,
         patientLastName: file.patientLastName,
         captureDate: file.captureDate,
       );
-      // GalleryStorage stream fires → TotemScreen's StreamBuilder auto-updates
-
-      final current = state;
-      if (current is TotemActive) {
-        emit(current.copyWith(photoCount: current.photoCount + 1));
-      }
     } catch (e) {
-      debugPrint('[TotemCubit] Error saving received file: $e');
+      debugPrint('[TotemCubit] Error saving Nearby file: $e');
+    }
+  }
+
+  Future<void> _onLanFileReceived(LanIncomingFile file) async {
+    try {
+      final destPath = await _newDestPath(file.fileName);
+      await File(destPath).writeAsBytes(file.bytes, flush: true);
+      await _persist(
+        File(destPath),
+        angle: file.angle,
+        patientFirstName: file.patientFirstName,
+        patientLastName: file.patientLastName,
+        captureDate: file.captureDate,
+      );
+    } catch (e) {
+      debugPrint('[TotemCubit] Error saving LAN file: $e');
+    }
+  }
+
+  Future<String> _newDestPath(String fileName) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final syncDir = Directory('${dir.path}/totem_received');
+    if (!await syncDir.exists()) await syncDir.create(recursive: true);
+    final ext = fileName.contains('.') ? fileName.split('.').last : 'jpg';
+    return '${syncDir.path}/photo_${DateTime.now().millisecondsSinceEpoch}.$ext';
+  }
+
+  Future<void> _persist(
+    File file, {
+    double? angle,
+    String? patientFirstName,
+    String? patientLastName,
+    String? captureDate,
+  }) async {
+    await _storage.saveImageWithAngle(
+      file,
+      angle,
+      patientFirstName: patientFirstName,
+      patientLastName: patientLastName,
+      captureDate: captureDate,
+    );
+    final current = state;
+    if (current is TotemActive) {
+      emit(current.copyWith(photoCount: current.photoCount + 1));
     }
   }
 

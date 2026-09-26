@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -108,10 +109,34 @@ class _TotemScreenState extends State<TotemScreen> {
     );
   }
 
+  /// QR payload.
+  ///  - With a LAN server: `digipad-totem/v2 <base64 json {name,hosts,port}>`
+  ///    (a v2 client tries LAN first, then falls back to Nearby).
+  ///  - Without LAN: the legacy `digipad-totem:{name}` string, so behaviour is
+  ///    byte-identical to the previous version.
+  String _qrData(TotemActive state) {
+    if (state.lanHosts.isEmpty && state.lanPort == 0) {
+      return 'digipad-totem:${state.totemName}';
+    }
+    final payload = jsonEncode({
+      'name': state.totemName,
+      'hosts': state.lanHosts,
+      'port': state.lanPort,
+    });
+    return 'digipad-totem/v2 ${base64.encode(utf8.encode(payload))}';
+  }
+
   Widget _buildActive(BuildContext context, TotemActive state) {
-    // QR encodes: "digipad-totem:{totemName}"
-    final qrData = 'digipad-totem:${state.totemName}';
+    final qrData = _qrData(state);
     final clientCount = state.connectedClientIds.length;
+    final lanIps = state.lanHosts
+        .map((h) => h.replaceFirst('http://', ''))
+        .toList();
+    final transport = state.lanOk && state.nearbyOk
+        ? 'WiFi local + Bluetooth (Nearby)'
+        : state.lanOk
+            ? 'WiFi local'
+            : 'Bluetooth (Nearby)';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -203,10 +228,18 @@ class _TotemScreenState extends State<TotemScreen> {
             child: Column(
               children: [
                 _InfoRow(
-                  icon: Icons.bluetooth_rounded,
-                  label: 'Tecnología',
-                  value: 'Nearby P2P (sin WiFi requerido)',
+                  icon: Icons.settings_input_antenna_rounded,
+                  label: 'Conexión',
+                  value: transport,
                 ),
+                if (lanIps.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  _InfoRow(
+                    icon: Icons.wifi_rounded,
+                    label: 'WiFi local',
+                    value: lanIps.join('  ·  '),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 _InfoRow(
                   icon: Icons.qr_code_rounded,
@@ -221,6 +254,14 @@ class _TotemScreenState extends State<TotemScreen> {
                       ? '$clientCount activo${clientCount == 1 ? '' : 's'}'
                       : 'Ninguno aún',
                 ),
+                if (!state.nearbyOk && state.lanOk) ...[
+                  const SizedBox(height: 10),
+                  const _InfoRow(
+                    icon: Icons.info_outline_rounded,
+                    label: 'Nota',
+                    value: 'Bluetooth no disponible — usando solo WiFi local',
+                  ),
+                ],
               ],
             ),
           ),

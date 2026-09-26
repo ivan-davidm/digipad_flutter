@@ -106,7 +106,7 @@ class ClientScreen extends StatelessWidget {
               child: MobileScanner(
                 onDetect: (capture) {
                   final raw = capture.barcodes.firstOrNull?.rawValue;
-                  if (raw != null && raw.startsWith('digipad-totem:')) {
+                  if (raw != null && raw.startsWith('digipad-totem')) {
                     context.read<ClientCubit>().pairWithToken(raw);
                   }
                 },

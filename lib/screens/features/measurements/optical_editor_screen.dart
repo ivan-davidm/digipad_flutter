@@ -16,6 +16,9 @@ import 'optical_logic_controller.dart';
 import 'optical_painter.dart';
 
 class OpticalEditorScreen extends StatefulWidget {
+  // Set to true to show the debug panel button in the AppBar.
+  static const bool kShowDebugButton = false;
+
   final String imagePath;
   final Map<String, dynamic>? detections;
   final MeasurementRecord? savedRecord;
@@ -64,6 +67,7 @@ class _OpticalEditorScreenState extends State<OpticalEditorScreen>
 
   double _imageRotation = 0.0;
   double _currentScale = 1.0;
+  bool _highResMode = false;
   bool _isPointSelected = false;
   String? _lastSelectedId;
   bool _isDraggingPoint = false;
@@ -104,7 +108,10 @@ class _OpticalEditorScreenState extends State<OpticalEditorScreen>
   void _onTransformChanged() {
     final s = _transformationController.value.getMaxScaleOnAxis();
     if ((s - _currentScale).abs() > 0.01) {
-      setState(() => _currentScale = s);
+      setState(() {
+        _currentScale = s;
+        if (!_highResMode && s >= 2.0) _highResMode = true;
+      });
     }
   }
 
@@ -731,11 +738,12 @@ class _OpticalEditorScreenState extends State<OpticalEditorScreen>
                         setState(() => _showAjustePanel = !_showAjustePanel),
                     tooltip: context.l10n.calibration,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.bug_report_outlined, color: Colors.yellowAccent),
-                    onPressed: _showDebugSheet,
-                    tooltip: 'Debug',
-                  ),
+                  if (OpticalEditorScreen.kShowDebugButton)
+                    IconButton(
+                      icon: const Icon(Icons.bug_report_outlined, color: Colors.yellowAccent),
+                      onPressed: _showDebugSheet,
+                      tooltip: 'Debug',
+                    ),
                 ],
               ),
               body: Column(
@@ -833,8 +841,12 @@ class _OpticalEditorScreenState extends State<OpticalEditorScreen>
           SizedBox(
             width: constraints.maxWidth,
             height: constraints.maxHeight,
-            child: Image.file(
-              _imageFile,
+            child: Image(
+              key: ValueKey(_highResMode),
+              image: ResizeImage(
+                FileImage(_imageFile),
+                width: _highResMode ? 1920 : 1080,
+              ),
               fit: BoxFit.contain,
               width: constraints.maxWidth,
               height: constraints.maxHeight,

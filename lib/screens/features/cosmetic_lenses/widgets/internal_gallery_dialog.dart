@@ -92,6 +92,7 @@ class InternalGalleryDialog extends StatelessWidget {
                                     Image.file(
                                       File(imagePath),
                                       fit: BoxFit.cover,
+                                      cacheWidth: 300,
                                     ),
                                     Positioned.fill(
                                       child: Material(

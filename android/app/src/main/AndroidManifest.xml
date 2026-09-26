@@ -26,6 +26,8 @@
     <!-- WiFi -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <!-- Receive the LAN Totem discovery UDP broadcast beacon -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     
     <!-- Foreground Service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -42,9 +44,15 @@
     <!-- Bluetooth (required on API 31+) -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" tools:node="replace" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" tools:node="replace" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" tools:node="replace" />
+    <!-- neverForLocation: BLE scan for Nearby discovery is not used to derive
+         physical location. Keeps discovery working on Android 12+ without the
+         location permission / location-services being tied to it. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"
+        tools:node="replace" />
     <!-- WiFi (required on API 33+) -->
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation"
         tools:node="replace"
         tools:targetApi="tiramisu" />
 
@@ -96,7 +104,8 @@
             
         <service
             android:name=".NearbyForegroundService"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
 
         <!-- Override geolocator's service to remove foregroundServiceType (API 29+ attribute) -->
         <service

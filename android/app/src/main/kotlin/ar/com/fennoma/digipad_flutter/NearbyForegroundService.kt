@@ -41,7 +41,17 @@ class NearbyForegroundService : Service() {
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
 
-        startForeground(1991, builder.build())
+        // Android 14 (API 34) requires a foregroundServiceType on both the
+        // manifest <service> entry and the startForeground() call.
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(
+                1991,
+                builder.build(),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+            )
+        } else {
+            startForeground(1991, builder.build())
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

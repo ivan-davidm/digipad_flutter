@@ -200,6 +200,7 @@ class _MeasurementsListScreenState extends State<MeasurementsListScreen> {
                   child: File(record.imagePath).existsSync()
                       ? Image.file(File(record.imagePath),
                           fit: BoxFit.cover,
+                          cacheWidth: 200,
                           key: ValueKey(record.imagePath))
                       : Container(
                           color: Colors.grey[850],
