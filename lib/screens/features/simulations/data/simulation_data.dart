@@ -29,8 +29,112 @@ class SimulationData {
     _presbyopiaCategory,
   ];
 
-  // ===================== MYOPIA (with Monofocal lenses) =====================
-  // Shows blurred distance vision corrected with monofocal lenses
+  // ===================== MONOFOCAL LENS SCENARIOS =====================
+  // Shared scene set with near/far monofocal correction chips. Used by the
+  // Monofocal lens-type category. Myopia (below) reuses the same problem
+  // images but strips the chips — it's a one-sided vision-problem demo
+  // (blurry far / sharp near), the inverse of Presbyopia, not a lens
+  // comparison.
+  static final List<SimulationScenario> _monofocalScenarios = [
+    // Kitchen scene
+    SimulationScenario(
+      id: 'myopia_kitchen',
+      sceneName: 'kitchen',
+      displayName: 'Kitchen',
+      problemImagePath: '$_basePath/myopia/myopia_kitchen_noLens.webp',
+      correctionLenses: [
+        CorrectionLens(
+          id: 'myopia_kitchen_near',
+          name: 'monofocal_near',
+          displayName: 'Monofocal Near',
+          correctedImagePath: '$_basePath/myopia/myopia_kitchen_close.webp',
+          quality: LensQuality.standard,
+        ),
+        CorrectionLens(
+          id: 'myopia_kitchen_far',
+          name: 'monofocal_far',
+          displayName: 'Monofocal Far',
+          correctedImagePath: '$_basePath/myopia/myopia_kitchen_far.webp',
+          quality: LensQuality.good,
+        ),
+      ],
+    ),
+    // Grocery scene (Supermarket) — shown before Market per feedback
+    SimulationScenario(
+      id: 'myopia_grocery',
+      sceneName: 'grocery',
+      displayName: 'Grocery',
+      problemImagePath: '$_basePath/myopia/myopia_grocery_noLens.webp',
+      correctionLenses: [
+        CorrectionLens(
+          id: 'myopia_grocery_near',
+          name: 'monofocal_near',
+          displayName: 'Monofocal Near',
+          correctedImagePath: '$_basePath/myopia/myopia_grocery_close.webp',
+          quality: LensQuality.standard,
+        ),
+        CorrectionLens(
+          id: 'myopia_grocery_far',
+          name: 'monofocal_far',
+          displayName: 'Monofocal Far',
+          correctedImagePath: '$_basePath/myopia/myopia_grocery_far.webp',
+          quality: LensQuality.good,
+        ),
+      ],
+    ),
+    // Market scene (Store)
+    SimulationScenario(
+      id: 'myopia_market',
+      sceneName: 'market',
+      displayName: 'Market',
+      problemImagePath: '$_basePath/myopia/myopia_market_noLens.webp',
+      correctionLenses: [
+        CorrectionLens(
+          id: 'myopia_market_near',
+          name: 'monofocal_near',
+          displayName: 'Monofocal Near',
+          correctedImagePath: '$_basePath/myopia/myopia_market_close.webp',
+          quality: LensQuality.standard,
+        ),
+        CorrectionLens(
+          id: 'myopia_market_far',
+          name: 'monofocal_far',
+          displayName: 'Monofocal Far',
+          correctedImagePath: '$_basePath/myopia/myopia_market_far.webp',
+          quality: LensQuality.good,
+        ),
+      ],
+    ),
+    // Clothing scene
+    SimulationScenario(
+      id: 'myopia_clothing',
+      sceneName: 'clothing',
+      displayName: 'Clothing Store',
+      problemImagePath: '$_basePath/myopia/myopia_clothing_noLens.webp',
+      correctionLenses: [
+        CorrectionLens(
+          id: 'myopia_clothing_near',
+          name: 'monofocal_near',
+          displayName: 'Monofocal Near',
+          correctedImagePath: '$_basePath/myopia/myopia_clothing_close.webp',
+          quality: LensQuality.standard,
+        ),
+        CorrectionLens(
+          id: 'myopia_clothing_far',
+          name: 'monofocal_far',
+          displayName: 'Monofocal Far',
+          correctedImagePath: '$_basePath/myopia/myopia_clothing_far.webp',
+          quality: LensQuality.good,
+        ),
+      ],
+    ),
+  ];
+
+  // ===================== MYOPIA (vision problem, no lens chips) =====================
+  // Opposite of Presbyopia: a myope sees well up close and poorly at a
+  // distance. The demo image is the "near" monofocal shot from
+  // _monofocalScenarios (sharp near / blurred far) — no correction chips,
+  // same single-image presentation as Presbyopia, just inverted.
   static final SimulationCategory _myopiaCategory = SimulationCategory(
     id: 'myopia',
     name: 'myopia',
@@ -38,100 +142,19 @@ class SimulationData {
     description: 'Difficulty seeing distant objects clearly (nearsightedness)',
     icon: Icons.remove_red_eye_outlined,
     color: Colors.blue,
-    scenarios: [
-      // Kitchen scene
-      SimulationScenario(
-        id: 'myopia_kitchen',
-        sceneName: 'kitchen',
-        displayName: 'Kitchen',
-        problemImagePath: '$_basePath/myopia/myopia_kitchen_noLens.webp',
-        correctionLenses: [
-          CorrectionLens(
-            id: 'myopia_kitchen_near',
-            name: 'monofocal_near',
-            displayName: 'Monofocal Near',
-            correctedImagePath: '$_basePath/myopia/myopia_kitchen_close.webp',
-            quality: LensQuality.standard,
+    scenarios: _monofocalScenarios
+        .map(
+          (s) => SimulationScenario(
+            id: s.id,
+            sceneName: s.sceneName,
+            displayName: s.displayName,
+            problemImagePath: s.correctionLenses
+                .firstWhere((l) => l.name == 'monofocal_near')
+                .correctedImagePath,
+            correctionLenses: const [],
           ),
-          CorrectionLens(
-            id: 'myopia_kitchen_far',
-            name: 'monofocal_far',
-            displayName: 'Monofocal Far',
-            correctedImagePath: '$_basePath/myopia/myopia_kitchen_far.webp',
-            quality: LensQuality.good,
-          ),
-        ],
-      ),
-      // Grocery scene (Supermarket) — shown before Market per feedback
-      SimulationScenario(
-        id: 'myopia_grocery',
-        sceneName: 'grocery',
-        displayName: 'Grocery',
-        problemImagePath: '$_basePath/myopia/myopia_grocery_noLens.webp',
-        correctionLenses: [
-          CorrectionLens(
-            id: 'myopia_grocery_near',
-            name: 'monofocal_near',
-            displayName: 'Monofocal Near',
-            correctedImagePath: '$_basePath/myopia/myopia_grocery_close.webp',
-            quality: LensQuality.standard,
-          ),
-          CorrectionLens(
-            id: 'myopia_grocery_far',
-            name: 'monofocal_far',
-            displayName: 'Monofocal Far',
-            correctedImagePath: '$_basePath/myopia/myopia_grocery_far.webp',
-            quality: LensQuality.good,
-          ),
-        ],
-      ),
-      // Market scene (Store)
-      SimulationScenario(
-        id: 'myopia_market',
-        sceneName: 'market',
-        displayName: 'Market',
-        problemImagePath: '$_basePath/myopia/myopia_market_noLens.webp',
-        correctionLenses: [
-          CorrectionLens(
-            id: 'myopia_market_near',
-            name: 'monofocal_near',
-            displayName: 'Monofocal Near',
-            correctedImagePath: '$_basePath/myopia/myopia_market_close.webp',
-            quality: LensQuality.standard,
-          ),
-          CorrectionLens(
-            id: 'myopia_market_far',
-            name: 'monofocal_far',
-            displayName: 'Monofocal Far',
-            correctedImagePath: '$_basePath/myopia/myopia_market_far.webp',
-            quality: LensQuality.good,
-          ),
-        ],
-      ),
-      // Clothing scene
-      SimulationScenario(
-        id: 'myopia_clothing',
-        sceneName: 'clothing',
-        displayName: 'Clothing Store',
-        problemImagePath: '$_basePath/myopia/myopia_clothing_noLens.webp',
-        correctionLenses: [
-          CorrectionLens(
-            id: 'myopia_clothing_near',
-            name: 'monofocal_near',
-            displayName: 'Monofocal Near',
-            correctedImagePath: '$_basePath/myopia/myopia_clothing_close.webp',
-            quality: LensQuality.standard,
-          ),
-          CorrectionLens(
-            id: 'myopia_clothing_far',
-            name: 'monofocal_far',
-            displayName: 'Monofocal Far',
-            correctedImagePath: '$_basePath/myopia/myopia_clothing_far.webp',
-            quality: LensQuality.good,
-          ),
-        ],
-      ),
-    ],
+        )
+        .toList(),
   );
 
   // ===================== MONOFOCAL =====================
@@ -142,7 +165,7 @@ class SimulationData {
     description: 'Vision correction with a single focal point',
     icon: Icons.adjust_outlined,
     color: Colors.indigo,
-    scenarios: _myopiaCategory.scenarios,
+    scenarios: _monofocalScenarios,
   );
 
   // ===================== MULTIFOCAL =====================

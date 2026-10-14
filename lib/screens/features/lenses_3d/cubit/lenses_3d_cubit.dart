@@ -15,22 +15,16 @@ class Lenses3DCubit extends Cubit<Lenses3DState> {
     );
   }
 
+  void selectSinGlasses() {
+    emit(state.copyWith(prescription: 0));
+  }
+
   void updateMaterialIndex(LensMaterialIndex materialIndex) {
-    int newPrescription = state.prescription;
-    final newState = state.copyWith(materialIndex: materialIndex);
-
-    if (newPrescription < newState.minPrescription) {
-      newPrescription = newState.minPrescription;
-    } else if (newPrescription > newState.maxPrescription) {
-      newPrescription = newState.maxPrescription;
-    }
-
-    emit(
-      state.copyWith(
-        materialIndex: materialIndex,
-        prescription: newPrescription,
-      ),
-    );
+    // Exit sin-glasses mode: default to prescription 1.
+    int newPrescription = state.prescription == 0 ? 1 : state.prescription;
+    final newState = state.copyWith(materialIndex: materialIndex, prescription: newPrescription);
+    final clamped = newPrescription.clamp(newState.minPrescription, newState.maxPrescription);
+    emit(state.copyWith(materialIndex: materialIndex, prescription: clamped));
   }
 
   void updatePrescription(int prescription) {
@@ -54,7 +48,9 @@ class Lenses3DCubit extends Cubit<Lenses3DState> {
   }
 
   void updateFrameType(LensFrameType frameType) {
-    emit(state.copyWith(frameType: frameType));
+    final next = state.copyWith(frameType: frameType);
+    final clamped = state.prescription.clamp(next.minPrescription, next.maxPrescription);
+    emit(next.copyWith(prescription: clamped));
   }
 
   void updateOrientation(LensOrientation orientation) {

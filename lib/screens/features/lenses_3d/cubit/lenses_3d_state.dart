@@ -61,38 +61,45 @@ class Lenses3DState {
 
   const Lenses3DState({
     this.materialIndex = LensMaterialIndex.index160,
-    this.prescription = 4,
+    this.prescription = 0,
     this.frameType = LensFrameType.frameA,
-    this.orientation = LensOrientation.angle15,
+    this.orientation = LensOrientation.angle01,
     this.isLoading = false,
     this.errorMessage,
   });
 
   String get currentImagePath {
-    final current =
-        'assets/images/lenses_3d/glasses_${materialIndex.fileCode}_$prescription${orientation.fileCode}_${frameType.fileCode}.webp';
-    return current;
+    if (prescription == 0) {
+      // Sin lentes: glasses_000{orientation.fileCode}.webp
+      return 'assets/images/lenses_3d/glasses_000${orientation.fileCode}.webp';
+    }
+    return 'assets/images/lenses_3d/glasses_${materialIndex.fileCode}_$prescription${orientation.fileCode}_${frameType.fileCode}.webp';
   }
 
+  /// Minimum non-zero prescription. Some material+frame combos lack low-D images.
+  ///   1.70 + Metal55 / Acetato: files start at 4D (Metal45 starts at 1D).
+  ///   1.80 + any frame:         files start at 4D.
   int get minPrescription {
     switch (materialIndex) {
-      case LensMaterialIndex.index150:
-        return 1;
-      case LensMaterialIndex.index160:
-        return 1;
       case LensMaterialIndex.index170:
-        return 4;
+        return frameType == LensFrameType.frameC ? 1 : 4;
       case LensMaterialIndex.index180:
         return 4;
+      default:
+        return 1;
     }
   }
 
+  /// Maximum prescription varies by material AND frame type, because some
+  /// combinations (e.g. 1.50 + Metal 55 / Acetato) lack files above certain Ds.
   int get maxPrescription {
     switch (materialIndex) {
       case LensMaterialIndex.index150:
-        return 18;
+        // Metal 45 (mp) goes to 18; Metal 55 and Acetato only to 14.
+        return frameType == LensFrameType.frameC ? 18 : 14;
       case LensMaterialIndex.index160:
-        return 20;
+        // Metal 45 (mp) goes to 20; Metal 55 and Acetato only to 18.
+        return frameType == LensFrameType.frameC ? 20 : 18;
       case LensMaterialIndex.index170:
         return 20;
       case LensMaterialIndex.index180:

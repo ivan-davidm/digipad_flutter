@@ -44,6 +44,12 @@
     }
   },
   "vhSelectAbove": "Selecciona una prueba de la galería de arriba",
+  "vhCatVisionTests": "Test de Visión",
+  "vhCatIshihara": "Bicromatico Ishihara",
+  "vhCatChildrenTest": "Bicromático Niños",
+  "vhCatAmetropia": "Ametropías",
+  "vhCatPathologies": "Patologías",
+  "vhCatAmsler": "Rejilla de Amsler",
   "lensThicknessSimulator": "Simulador de Espesor de Lentes",
   "lensConfiguration": "Configuración de Lente",
   "materialIndex": "Índice del Material",
@@ -391,5 +397,12 @@
   "simAdaptStandard": "Estándar",
   "simAdaptGood": "Buena",
   "simAdaptPremium": "Premium",
-  "simReplay": "Reproducir"
+  "simReplay": "Reproducir",
+  "sinGlasses": "Sin lentes",
+  "sharedView": "Vista compartida",
+  "lensLabelA": "Lente A",
+  "lensLabelB": "Lente B",
+  "comparatorLabel": "Comparador",
+  "settingsCopied": "Configuración copiada a B",
+  "copyAtoB": "Copiar A a B"
 }

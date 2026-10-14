@@ -441,53 +441,58 @@ class _ScenarioCard extends StatelessWidget {
                       maxLines: 1,
                       minFontSize: 10,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      context.l10n.lensesAvailable(
-                        scenario.correctionLenses.length,
-                      ),
-                      style: TextStyle(
-                        fontSize: isPhone ? 12 : 22,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: isPhone ? 32 : 48,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        child: Row(
-                          children: scenario.correctionLenses
-                              .map(
-                                (lens) => Container(
-                                  margin: const EdgeInsets.only(right: 8),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _getLensColor(
-                                      lens.quality,
-                                    ).withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: AutoSizeText(
-                                    SimulationStrings.lensName(context, lens),
-                                    style: TextStyle(
-                                      fontSize: isPhone ? 13 : 28,
-                                      color: _getLensColor(lens.quality),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    maxLines: 1,
-                                    minFontSize: 9,
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                    if (scenario.correctionLenses.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        context.l10n.lensesAvailable(
+                          scenario.correctionLenses.length,
+                        ),
+                        style: TextStyle(
+                          fontSize: isPhone ? 12 : 22,
+                          color: Colors.grey.shade600,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: isPhone ? 32 : 48,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Row(
+                            children: scenario.correctionLenses
+                                .map(
+                                  (lens) => Container(
+                                    margin: const EdgeInsets.only(right: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _getLensColor(
+                                        lens.quality,
+                                      ).withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: AutoSizeText(
+                                      SimulationStrings.lensName(
+                                        context,
+                                        lens,
+                                      ),
+                                      style: TextStyle(
+                                        fontSize: isPhone ? 13 : 28,
+                                        color: _getLensColor(lens.quality),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      minFontSize: 9,
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

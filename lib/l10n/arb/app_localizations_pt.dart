@@ -87,6 +87,24 @@ class AppLocalizationsPt extends AppLocalizations {
   String get vhSelectAbove => 'Selecione um teste na galeria acima';
 
   @override
+  String get vhCatVisionTests => 'Testes de Visão';
+
+  @override
+  String get vhCatIshihara => 'Bicromatico Ishihara';
+
+  @override
+  String get vhCatChildrenTest => 'Bicromático Crianças';
+
+  @override
+  String get vhCatAmetropia => 'Ametropias';
+
+  @override
+  String get vhCatPathologies => 'Patologias';
+
+  @override
+  String get vhCatAmsler => 'Grade de Amsler';
+
+  @override
   String get lensThicknessSimulator => 'Simulador de Espessura de Lentes';
 
   @override
@@ -899,4 +917,25 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get simReplay => 'Reproduzir';
+
+  @override
+  String get sinGlasses => 'Sem óculos';
+
+  @override
+  String get sharedView => 'Vista compartilhada';
+
+  @override
+  String get lensLabelA => 'Lente A';
+
+  @override
+  String get lensLabelB => 'Lente B';
+
+  @override
+  String get comparatorLabel => 'Comparador';
+
+  @override
+  String get settingsCopied => 'Configurações copiadas para B';
+
+  @override
+  String get copyAtoB => 'Copiar A para B';
 }

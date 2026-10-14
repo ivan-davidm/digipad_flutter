@@ -5,52 +5,48 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:digipad_flutter/l10n/l10n.dart';
 
 class Lenses3DControlPanel extends StatelessWidget {
-  const Lenses3DControlPanel({super.key});
+  final String label;
+
+  const Lenses3DControlPanel({
+    super.key,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<Lenses3DCubit>();
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return BlocBuilder<Lenses3DCubit, Lenses3DState>(
-          builder: (context, state) {
-            // Reduced padding for compact view
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Row 1: Material & Frame (Side by side to save vertical space)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _buildMaterialSelector(context, state, cubit),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildFrameSelector(context, state, cubit),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Row 2: Prescription
-                  _buildPrescriptionControl(context, state, cubit),
-
-                  const SizedBox(height: 8),
-                  const Divider(color: Colors.white12, height: 1),
-                  const SizedBox(height: 8),
-
-                  // Row 3: Orientation
-                  _buildOrientationControl(context, state, cubit),
-                ],
+    return BlocBuilder<Lenses3DCubit, Lenses3DState>(
+      builder: (context, state) {
+        final isSinGlasses = state.prescription == 0;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            );
-          },
+              const SizedBox(height: 4),
+
+              // Material row: [Sin Lentes] [1.50] [1.60] [1.70] [1.80]
+              _buildMaterialSelector(context, state, cubit, isSinGlasses),
+
+              // Frame + Prescription: only when a real material is selected
+              if (!isSinGlasses) ...[
+                const SizedBox(height: 4),
+                _buildFrameSelector(context, state, cubit),
+                const SizedBox(height: 4),
+                _buildPrescriptionControl(context, state, cubit),
+              ],
+            ],
+          ),
         );
       },
     );
@@ -60,49 +56,26 @@ class Lenses3DControlPanel extends StatelessWidget {
     BuildContext context,
     Lenses3DState state,
     Lenses3DCubit cubit,
+    bool isSinGlasses,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Wrap(
+      spacing: 3,
+      runSpacing: 3,
       children: [
-        Text(
-          context.l10n.materialIndex,
-          style: const TextStyle(color: Colors.white70, fontSize: 10),
+        // Sin Lentes chip
+        _Chip(
+          label: context.l10n.sinGlasses,
+          selected: isSinGlasses,
+          color: Colors.greenAccent.shade700,
+          onTap: cubit.selectSinGlasses,
         ),
-        const SizedBox(height: 4),
-        Wrap(
-          spacing: 4,
-          runSpacing: 4,
-          children: LensMaterialIndex.values.map((material) {
-            final isSelected = state.materialIndex == material;
-            return GestureDetector(
-              onTap: () => cubit.updateMaterialIndex(material),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.blueAccent : Colors.grey.shade800,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: isSelected
-                        ? Colors.blueAccent.shade200
-                        : Colors.transparent,
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  material.displayName,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white60,
-                    fontSize: 14,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
+        // Material index chips
+        ...LensMaterialIndex.values.map((material) => _Chip(
+          label: material.displayName,
+          selected: !isSinGlasses && state.materialIndex == material,
+          color: Colors.blueAccent,
+          onTap: () => cubit.updateMaterialIndex(material),
+        )),
       ],
     );
   }
@@ -112,49 +85,15 @@ class Lenses3DControlPanel extends StatelessWidget {
     Lenses3DState state,
     Lenses3DCubit cubit,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.l10n.frameType,
-          style: const TextStyle(color: Colors.white70, fontSize: 10),
-        ),
-        const SizedBox(height: 4),
-        Wrap(
-          spacing: 4,
-          runSpacing: 4,
-          children: LensFrameType.values.map((frame) {
-            final isSelected = state.frameType == frame;
-            return GestureDetector(
-              onTap: () => cubit.updateFrameType(frame),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.blueAccent : Colors.grey.shade800,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: isSelected
-                        ? Colors.blueAccent.shade200
-                        : Colors.transparent,
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  frame.displayName,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white60,
-                    fontSize: 14,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+    return Wrap(
+      spacing: 3,
+      runSpacing: 3,
+      children: LensFrameType.values.map((frame) => _Chip(
+        label: frame.displayName,
+        selected: state.frameType == frame,
+        color: Colors.blueAccent,
+        onTap: () => cubit.updateFrameType(frame),
+      )).toList(),
     );
   }
 
@@ -163,113 +102,109 @@ class Lenses3DControlPanel extends StatelessWidget {
     Lenses3DState state,
     Lenses3DCubit cubit,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              context.l10n.prescription,
-              style: const TextStyle(color: Colors.white70, fontSize: 10),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.blueAccent.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                '${state.prescription}D',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
+        Text(
+          context.l10n.prescription,
+          style: const TextStyle(color: Colors.white70, fontSize: 10),
         ),
-        Row(
-          children: [
-            IconButton(
-              onPressed: state.prescription > state.minPrescription
-                  ? cubit.decrementPrescription
-                  : null,
-              icon: const Icon(Icons.remove_circle_outline),
-              color: Colors.blueAccent,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              iconSize: 20,
+        const SizedBox(width: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+          decoration: BoxDecoration(
+            color: Colors.blueAccent.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            '${state.prescription}D',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
             ),
-            Expanded(
-              child: SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  activeTrackColor: Colors.blueAccent,
-                  inactiveTrackColor: Colors.grey.shade700,
-                  thumbColor: Colors.blueAccent,
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 6,
-                  ),
-                  overlayShape: const RoundSliderOverlayShape(
-                    overlayRadius: 10,
-                  ),
-                  trackHeight: 2,
-                ),
-                child: Slider(
-                  value: state.prescription.toDouble(),
-                  min: state.minPrescription.toDouble(),
-                  max: state.maxPrescription.toDouble(),
-                  divisions: state.maxPrescription - state.minPrescription,
-                  onChanged: (value) => cubit.updatePrescription(value.round()),
-                ),
-              ),
+          ),
+        ),
+        IconButton(
+          onPressed: state.prescription > state.minPrescription
+              ? cubit.decrementPrescription
+              : null,
+          icon: const Icon(Icons.remove_circle_outline),
+          color: Colors.blueAccent,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          iconSize: 16,
+        ),
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: Colors.blueAccent,
+              inactiveTrackColor: Colors.grey.shade700,
+              thumbColor: Colors.blueAccent,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 8),
+              trackHeight: 2,
             ),
-            IconButton(
-              onPressed: state.prescription < state.maxPrescription
-                  ? cubit.incrementPrescription
-                  : null,
-              icon: const Icon(Icons.add_circle_outline),
-              color: Colors.blueAccent,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              iconSize: 20,
+            child: Slider(
+              value: state.prescription.toDouble(),
+              min: state.minPrescription.toDouble(),
+              max: state.maxPrescription.toDouble(),
+              divisions: state.maxPrescription - state.minPrescription,
+              onChanged: (v) => cubit.updatePrescription(v.round()),
             ),
-          ],
+          ),
+        ),
+        IconButton(
+          onPressed: state.prescription < state.maxPrescription
+              ? cubit.incrementPrescription
+              : null,
+          icon: const Icon(Icons.add_circle_outline),
+          color: Colors.blueAccent,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          iconSize: 16,
         ),
       ],
     );
   }
+}
 
-  Widget _buildOrientationControl(
-    BuildContext context,
-    Lenses3DState state,
-    Lenses3DCubit cubit,
-  ) {
-    return Row(
-      children: [
-        const Icon(Icons.threesixty, color: Colors.greenAccent, size: 16),
-        const SizedBox(width: 8),
-        Expanded(
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: Colors.greenAccent,
-              inactiveTrackColor: Colors.grey.shade700,
-              thumbColor: Colors.greenAccent,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-              trackHeight: 2,
-            ),
-            child: Slider(
-              value: state.orientation.angle.toDouble(),
-              min: 1,
-              max: 20,
-              divisions: 19,
-              onChanged: (value) =>
-                  cubit.updateOrientationByAngle(value.round()),
-            ),
+class _Chip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _Chip({
+    required this.label,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+        decoration: BoxDecoration(
+          color: selected ? color : Colors.grey.shade800,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: selected ? color.withValues(alpha: 0.8) : Colors.transparent,
+            width: 1,
           ),
         ),
-      ],
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.white : Colors.white60,
+            fontSize: 11,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
     );
   }
 }
