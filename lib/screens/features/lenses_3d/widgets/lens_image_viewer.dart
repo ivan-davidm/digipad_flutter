@@ -4,14 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:digipad_flutter/l10n/l10n.dart';
 
+/// Overview widget for a single lens panel.
+/// Shows the full image, handles swipe-to-rotate orientation gesture,
+/// and fires [onTapUp] so the parent can navigate the detail zoom.
 class LensImageViewer extends StatefulWidget {
   final Lenses3DState state;
-  final bool isZoomedOut;
+  final void Function(TapUpDetails)? onTapUp;
 
   const LensImageViewer({
     super.key,
     required this.state,
-    required this.isZoomedOut,
+    this.onTapUp,
   });
 
   @override
@@ -19,18 +22,13 @@ class LensImageViewer extends StatefulWidget {
 }
 
 class _LensImageViewerState extends State<LensImageViewer> {
-  double _virtualAngle = 15.0;
-  bool showGestureHint = true;
+  double _virtualAngle = 1.0;
+  int _pointerCount = 0;
 
   @override
   void initState() {
     super.initState();
     _virtualAngle = widget.state.orientation.angle.toDouble();
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() => showGestureHint = false);
-      }
-    });
   }
 
   @override
@@ -45,194 +43,122 @@ class _LensImageViewerState extends State<LensImageViewer> {
   Widget build(BuildContext context) {
     final cubit = context.read<Lenses3DCubit>();
 
-    return GestureDetector(
-      onPanStart: (details) {
+    return Listener(
+      onPointerDown: (_) => _pointerCount++,
+      onPointerUp: (_) => _pointerCount--,
+      onPointerCancel: (_) => _pointerCount--,
+      child: GestureDetector(
+      onPanStart: (_) {
         _virtualAngle = widget.state.orientation.angle.toDouble();
-        setState(() => showGestureHint = true);
       },
       onPanUpdate: (details) {
+        if (_pointerCount > 1) return; // ignore multi-touch / pinch on overview
         final dx = details.delta.dx;
         final dy = details.delta.dy;
         double newAngle = _virtualAngle;
 
-        const double hSensitivity = 0.05;
-        const double vSensitivity = 0.05;
+        const hSens = 0.05;
+        const vSens = 0.05;
 
         if (_virtualAngle < 14.5) {
-          newAngle += dx * hSensitivity;
+          newAngle += dx * hSens;
           if (newAngle > 15.0) newAngle = 15.0;
         } else if (_virtualAngle > 15.5) {
-          newAngle -= dy * vSensitivity;
+          newAngle -= dy * vSens;
           if (newAngle < 15.0) newAngle = 15.0;
         } else {
           if (dx.abs() > dy.abs()) {
-            if (dx < 0) newAngle += dx * hSensitivity;
+            if (dx < 0) newAngle += dx * hSens;
           } else {
-            if (dy < 0) newAngle -= dy * vSensitivity;
+            if (dy < 0) newAngle -= dy * vSens;
           }
         }
 
         newAngle = newAngle.clamp(1.0, 20.0);
         _virtualAngle = newAngle;
 
-        final int targetAngle = _virtualAngle.round();
-        if (targetAngle != widget.state.orientation.angle) {
-          cubit.updateOrientationByAngle(targetAngle);
+        final target = _virtualAngle.round();
+        if (target != widget.state.orientation.angle) {
+          cubit.updateOrientationByAngle(target);
         }
       },
-      onPanEnd: (details) {
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) setState(() => showGestureHint = false);
-        });
-      },
+      onTapUp: widget.onTapUp,
       child: Container(
-        color: Colors.white, // FIX: Background color avoids Green scaffold gaps
+        color: Colors.white,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Lens Image
-            ClipRect(
-              child: Transform.scale(
-                scale: widget.isZoomedOut ? 1.8 : 3,
-                alignment: Alignment.center,
-                child: Transform.translate(
-                  offset: widget.isZoomedOut
-                      ? const Offset(0, 0)
-                      : const Offset(50, 0),
-                  child: Image.asset(
-                    widget.state.currentImagePath,
-                    fit: widget.isZoomedOut ? BoxFit.contain : BoxFit.cover,
-                    alignment: Alignment.center,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey.shade200,
-                        child: Center(
-                          child: Icon(
-                            Icons.image_not_supported_outlined,
-                            size: 32,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
-                      );
-                    },
+            Image.asset(
+              widget.state.currentImagePath,
+              fit: BoxFit.cover,
+              errorBuilder: (context2, e, st) => Container(
+                color: Colors.grey.shade200,
+                child: Center(
+                  child: Icon(
+                    Icons.image_not_supported_outlined,
+                    size: 28,
+                    color: Colors.grey.shade400,
                   ),
                 ),
               ),
             ),
-            // Info overlay - top left
+            // Material / prescription info
             Positioned(
-              top: 8,
-              left: 8,
+              top: 6,
+              left: 6,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.visibility_outlined,
-                      color: Colors.white70,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${widget.state.materialIndex.displayName} • ${widget.state.prescription}D • ${widget.state.frameType.displayName}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Zoom indicator
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
+                  color: Colors.black.withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      widget.isZoomedOut ? Icons.zoom_out : Icons.zoom_in,
-                      color: Colors.white70,
-                      size: 12,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      widget.isZoomedOut
-                          ? context.l10n.fullView
-                          : context.l10n.detailView,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  widget.state.prescription == 0
+                      ? context.l10n.sinGlasses
+                      : '${widget.state.materialIndex.displayName} • ${widget.state.prescription}D',
+                  style: const TextStyle(color: Colors.white70, fontSize: 10),
                 ),
               ),
             ),
-
             // Orientation badge
             Positioned(
-              bottom: 8,
-              left: 8,
+              bottom: 4,
+              left: 6,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(6),
+                  color: Colors.black.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(4),
                   border: Border.all(
-                    color: Colors.greenAccent.withValues(alpha: 0.5),
-                    width: 1,
+                    color: Colors.greenAccent.withValues(alpha: 0.4),
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _getOrientationIcon(),
-                    const SizedBox(width: 4),
-                    Text(
-                      widget.state.orientation.shortName,
-                      style: const TextStyle(
-                        color: Colors.greenAccent,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  widget.state.orientation.shortName,
+                  style: const TextStyle(
+                    color: Colors.greenAccent,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
+              ),
+            ),
+            // Tap-hint icon
+            Positioned(
+              bottom: 4,
+              right: 6,
+              child: Icon(
+                Icons.touch_app_outlined,
+                color: Colors.white.withValues(alpha: 0.3),
+                size: 16,
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _getOrientationIcon() {
-    final angle = widget.state.orientation.angle;
-    if (angle < 15) {
-      return const Icon(
-        Icons.compare_arrows,
-        color: Colors.greenAccent,
-        size: 14,
-      );
-    } else if (angle > 15) {
-      return const Icon(Icons.expand_less, color: Colors.greenAccent, size: 14);
-    } else {
-      return const Icon(Icons.face, color: Colors.greenAccent, size: 14);
-    }
+    ), // GestureDetector
+    ); // Listener
   }
 }

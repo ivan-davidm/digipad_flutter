@@ -26,14 +26,21 @@ class SimulationsCubit extends Cubit<SimulationsState> {
 
   /// Select a specific scenario within the current category.
   void selectScenario(SimulationScenario scenario) {
-    // Auto-select first lens if available
-    final firstLens = scenario.correctionLenses.isNotEmpty
-        ? scenario.correctionLenses[0]
-        : null;
+    // Progressives (multifocal) default to the "Good" quality tier;
+    // everything else defaults to the first available lens.
+    CorrectionLens? defaultLens;
+    if (scenario.correctionLenses.isNotEmpty) {
+      defaultLens = state.selectedCategory?.id == 'multifocal'
+          ? scenario.correctionLenses.firstWhere(
+              (lens) => lens.quality == LensQuality.good,
+              orElse: () => scenario.correctionLenses[0],
+            )
+          : scenario.correctionLenses[0];
+    }
     emit(
       state.copyWith(
         selectedScenario: scenario,
-        selectedLens: firstLens,
+        selectedLens: defaultLens,
         clearError: true,
       ),
     );

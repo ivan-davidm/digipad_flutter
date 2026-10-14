@@ -244,6 +244,42 @@ abstract class AppLocalizations {
   /// **'Select a test from the gallery above'**
   String get vhSelectAbove;
 
+  /// No description provided for @vhCatVisionTests.
+  ///
+  /// In en, this message translates to:
+  /// **'Vision Tests'**
+  String get vhCatVisionTests;
+
+  /// No description provided for @vhCatIshihara.
+  ///
+  /// In en, this message translates to:
+  /// **'Ishihara Bichromatic'**
+  String get vhCatIshihara;
+
+  /// No description provided for @vhCatChildrenTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Children\'s Bichromatic'**
+  String get vhCatChildrenTest;
+
+  /// No description provided for @vhCatAmetropia.
+  ///
+  /// In en, this message translates to:
+  /// **'Ametropia'**
+  String get vhCatAmetropia;
+
+  /// No description provided for @vhCatPathologies.
+  ///
+  /// In en, this message translates to:
+  /// **'Pathologies'**
+  String get vhCatPathologies;
+
+  /// No description provided for @vhCatAmsler.
+  ///
+  /// In en, this message translates to:
+  /// **'Amsler Grid'**
+  String get vhCatAmsler;
+
   /// No description provided for @lensThicknessSimulator.
   ///
   /// In en, this message translates to:
@@ -1767,6 +1803,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Replay'**
   String get simReplay;
+
+  /// No description provided for @sinGlasses.
+  ///
+  /// In en, this message translates to:
+  /// **'No Glasses'**
+  String get sinGlasses;
+
+  /// No description provided for @sharedView.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared View'**
+  String get sharedView;
+
+  /// No description provided for @lensLabelA.
+  ///
+  /// In en, this message translates to:
+  /// **'Lens A'**
+  String get lensLabelA;
+
+  /// No description provided for @lensLabelB.
+  ///
+  /// In en, this message translates to:
+  /// **'Lens B'**
+  String get lensLabelB;
+
+  /// No description provided for @comparatorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparator'**
+  String get comparatorLabel;
+
+  /// No description provided for @settingsCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings copied to B'**
+  String get settingsCopied;
+
+  /// No description provided for @copyAtoB.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy A to B'**
+  String get copyAtoB;
 }
 
 class _AppLocalizationsDelegate

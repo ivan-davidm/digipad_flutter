@@ -65,7 +65,13 @@ class _SimulationViewerScreenState extends State<SimulationViewerScreen>
 
     // Set initial lens
     if (widget.scenario.correctionLenses.isNotEmpty) {
-      _currentLens = widget.scenario.correctionLenses.first;
+      // Progressives (multifocal) default to the "Good" quality tier.
+      _currentLens = widget.category.id == 'multifocal'
+          ? widget.scenario.correctionLenses.firstWhere(
+              (lens) => lens.quality == LensQuality.good,
+              orElse: () => widget.scenario.correctionLenses.first,
+            )
+          : widget.scenario.correctionLenses.first;
     }
 
     _loadImages();
