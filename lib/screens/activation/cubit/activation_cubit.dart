@@ -42,12 +42,19 @@ class ActivationCubit extends Cubit<ActivationState> {
       // permanently — no interaction counter, no expiry.
       final isLocallyApproved = await _service.isLocallyApproved();
       if (isLocallyApproved) {
-        emit(state.copyWith(status: ActivationStatus.approved, email: savedEmail));
+        emit(
+          state.copyWith(status: ActivationStatus.approved, email: savedEmail),
+        );
         return;
       }
 
       // Not yet approved: internet is required to verify.
-      emit(state.copyWith(status: ActivationStatus.error, errorMessage: 'activationNoInternet'));
+      emit(
+        state.copyWith(
+          status: ActivationStatus.error,
+          errorMessage: 'activationNoInternet',
+        ),
+      );
       return;
     }
 
@@ -121,7 +128,12 @@ class ActivationCubit extends Cubit<ActivationState> {
 
       // Not approved + no internet → block immediately.
       if (state.status != ActivationStatus.blockedOffline) {
-        emit(state.copyWith(status: ActivationStatus.blockedOffline, errorMessage: null));
+        emit(
+          state.copyWith(
+            status: ActivationStatus.blockedOffline,
+            errorMessage: null,
+          ),
+        );
       }
     } else {
       if (state.status == ActivationStatus.notRegistered) return;

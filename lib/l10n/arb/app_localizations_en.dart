@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Digipad';
+  String get appTitle => 'DigiTower 3D';
 
   @override
   String get menuVirtualMirror => 'Virtual Mirror';

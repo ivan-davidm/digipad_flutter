@@ -103,7 +103,7 @@ abstract class AppLocalizations {
   /// The title of the application
   ///
   /// In en, this message translates to:
-  /// **'Digipad'**
+  /// **'DigiTower 3D'**
   String get appTitle;
 
   /// No description provided for @menuVirtualMirror.

@@ -9,7 +9,7 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
-  String get appTitle => 'Digipad';
+  String get appTitle => 'DigiTower 3D';
 
   @override
   String get menuVirtualMirror => 'Espejo Virtual';

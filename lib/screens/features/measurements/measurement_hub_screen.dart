@@ -20,6 +20,11 @@ class MeasurementHubScreen extends StatefulWidget {
 class _MeasurementHubScreenState extends State<MeasurementHubScreen> {
   static const Color _bg = Color(0xFF121212);
 
+  // Flagged for later: hidden from the hub per product decision, kept wired
+  // so they can be turned back on without re-doing the capture/navigation code.
+  static const bool _kShowNewMeasurementTile = false;
+  static const bool _kShowRemoteMeasurementTile = false;
+
   static const _creationParams = <String, dynamic>{
     'modelPath': 'assets/model3.tflite',
     'labelPath': 'assets/labels.txt',
@@ -201,58 +206,75 @@ class _MeasurementHubScreenState extends State<MeasurementHubScreen> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
+                    child: Column(
                       children: [
-                        _HubTile(
-                          icon: Icons.camera_alt,
-                          label: context.l10n.hubNewMeasurement,
-                          color: Colors.deepPurpleAccent,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MeasurementCaptureScreen(),
+                        // Flagged off per product decision — kept for later re-activation.
+                        if (_kShowNewMeasurementTile) ...[
+                          Expanded(
+                            child: _HubTile(
+                              icon: Icons.camera_alt,
+                              label: context.l10n.hubNewMeasurement,
+                              color: Colors.deepPurpleAccent,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const MeasurementCaptureScreen(),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                        _HubTile(
-                          icon: Icons.photo_library_outlined,
-                          label: context.l10n.galleryTitle,
-                          color: Colors.blueAccent,
-                          onTap: _openSystemGallery,
-                        ),
-                        _HubTile(
-                          icon: Icons.sd_storage_outlined,
-                          label: context.l10n.vmInternalGallery,
-                          color: Colors.tealAccent,
-                          onTap: _openInternalGallery,
-                        ),
-                        _HubTile(
-                          icon: Icons.assignment_outlined,
-                          label: context.l10n.myMeasurements,
-                          color: const Color(0xFFBB86FC),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MeasurementsListScreen(),
-                            ),
+                          const SizedBox(height: 16),
+                        ],
+                        Expanded(
+                          child: _HubTile(
+                            icon: Icons.sd_storage_outlined,
+                            label: context.l10n.vmInternalGallery,
+                            color: Colors.tealAccent,
+                            onTap: _openInternalGallery,
                           ),
                         ),
-                        _HubTile(
-                          icon: Icons.person_search_outlined,
-                          label: context.l10n.hubNoAccessory,
-                          color: Colors.orangeAccent,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MeasurementCaptureScreen(
-                                mode: MeasurementMode.sinAccesorio,
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: _HubTile(
+                            icon: Icons.assignment_outlined,
+                            label: context.l10n.myMeasurements,
+                            color: const Color(0xFFBB86FC),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const MeasurementsListScreen(),
                               ),
                             ),
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: _HubTile(
+                            icon: Icons.photo_library_outlined,
+                            label: context.l10n.galleryTitle,
+                            color: Colors.blueAccent,
+                            onTap: _openSystemGallery,
+                          ),
+                        ),
+                        // Flagged off per product decision — kept for later re-activation.
+                        if (_kShowRemoteMeasurementTile) ...[
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: _HubTile(
+                              icon: Icons.person_search_outlined,
+                              label: context.l10n.hubNoAccessory,
+                              color: Colors.orangeAccent,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const MeasurementCaptureScreen(
+                                    mode: MeasurementMode.sinAccesorio,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -312,14 +334,14 @@ class _HubTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 52),
+            Icon(icon, color: color, size: 62),
             const SizedBox(height: 14),
             Text(
               label,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 16,
+                fontSize: 19,
                 fontWeight: FontWeight.w600,
                 height: 1.3,
               ),

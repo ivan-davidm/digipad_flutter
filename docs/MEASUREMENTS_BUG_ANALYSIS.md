@@ -23,7 +23,7 @@ When a wearer looks straight ahead:
 - **+15° pantoscopic angle** = lenses tilted down/forward naturally (typical reading posture)
 - **-15° pantoscopic angle** = lenses tilted up/backward (uncommon, head-back posture)
 
-### Why It Matters for DigiPad
+### Why It Matters for DigiTower 3D
 1. **Lens Power Distribution** — Pantoscopic angle affects where progressive lens zones sit relative to the pupil
 2. **Optical Aberrations** — Tilt introduces prism and spherical aberration
 3. **Simulation Accuracy** — Without knowing the device tilt, simulations are meaningless

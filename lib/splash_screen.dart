@@ -37,7 +37,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 const SizedBox(height: 20),
                 // App title
                 const Text(
-                  'DigiPad 3D Max Premium',
+                  'DigiTower 3D Premium',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
