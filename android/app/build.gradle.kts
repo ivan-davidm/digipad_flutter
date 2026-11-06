@@ -25,10 +25,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
         viewBinding = true
     }
@@ -49,11 +45,17 @@ android {
         }
     }
 
-    aaptOptions {
-        noCompress ("tflite")
-        noCompress ("lite")
+    androidResources {
+        noCompress.add("tflite")
+        noCompress.add("lite")
     }
 
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
 }
 
 flutter {

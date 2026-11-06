@@ -10,10 +10,11 @@ import 'package:digipad_flutter/screens/features/simulations/presentation/main_s
 import 'package:digipad_flutter/screens/features/virtual_mirror/cubit/virtual_mirror_cubit.dart';
 import 'package:digipad_flutter/screens/features/virtual_mirror/presentation/virtual_mirror_screen.dart';
 import 'package:digipad_flutter/screens/features/measurements/measurement_hub_screen.dart';
+import 'package:digipad_flutter/screens/features/measurements/shared_image_intent_handler.dart';
 import 'package:digipad_flutter/screens/features/visual_health/cubit/visual_health_cubit.dart';
 import 'package:digipad_flutter/screens/features/visual_health/presentation/visual_health_screen.dart';
-import 'package:digipad_flutter/screens/features/cosmetic_lenses/cubit/cosmetic_lenses_cubit.dart';
-import 'package:digipad_flutter/screens/features/cosmetic_lenses/presentation/cosmetic_lenses_screen.dart';
+import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_cubit.dart';
+import 'package:digipad_flutter/screens/features/visagismo/presentation/visagismo_entry_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:digipad_flutter/l10n/l10n.dart';
@@ -37,6 +38,11 @@ class _HomeScreenState extends State<HomeScreen>
   late final AnimationController _entranceController;
   static const int _moduleCount = 7;
 
+  // Lets a photo shared into DigiTower from another app (e.g. WhatsApp) open
+  // straight in the measurement editor — started here, not in main.dart,
+  // since reaching this screen already means activation passed.
+  late final SharedImageIntentHandler _sharedImageIntentHandler;
+
   @override
   void initState() {
     super.initState();
@@ -48,12 +54,16 @@ class _HomeScreenState extends State<HomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..forward();
+
+    _sharedImageIntentHandler = SharedImageIntentHandler(rootNavigatorKey)
+      ..start();
   }
 
   @override
   void dispose() {
     _entranceController.dispose();
     _hostCubit.close();
+    _sharedImageIntentHandler.dispose();
     super.dispose();
   }
 
@@ -64,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen>
       title: context.l10n.menuVirtualMirror,
       icon: Icons.face_retouching_natural,
       color: Colors.white,
-      top: MediaQuery.of(context).size.height * 0.05,
+      top: MediaQuery.of(context).size.height * 0.02,
       left: 75,
     ),
     _ModuleDef(
@@ -72,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen>
       title: context.l10n.menuSimulations,
       icon: Icons.auto_fix_high,
       color: const Color(0xFF4CAF50),
-      top: MediaQuery.of(context).size.height * 0.17,
+      top: MediaQuery.of(context).size.height * 0.12,
       left: 60,
     ),
     _ModuleDef(
@@ -80,23 +90,29 @@ class _HomeScreenState extends State<HomeScreen>
       title: context.l10n.menuLenses3D,
       icon: Icons.view_in_ar,
       color: Colors.white,
-      top: MediaQuery.of(context).size.height * 0.30,
+      top: MediaQuery.of(context).size.height * 0.25,
       left: 45,
     ),
-    _ModuleDef(
-      key: 'cosmetic_lenses',
-      title: context.l10n.menuCosmeticLenses,
-      icon: Icons.remove_red_eye_outlined,
-      color: const Color(0xFF2196F3),
-      top: MediaQuery.of(context).size.height * 0.43,
-      left: 30,
-    ),
+    // 'cosmetic_lenses' hidden per product decision (2026-11-05) — not
+    // deleted, just no longer in this list. To bring it back: re-add its
+    // _ModuleDef (icon: Icons.remove_red_eye_outlined, color: 0xFF2196F3,
+    // key/title: menuCosmeticLenses) and its `_navigateToModule` branch
+    // (CosmeticLensesCubit/CosmeticLensesScreen), bump `_moduleCount` back to
+    // 8, and re-tune every module's `top` fraction for 8 slots again.
     _ModuleDef(
       key: 'measurements',
       title: context.l10n.menuMeasurements,
       icon: Icons.straighten,
       color: const Color(0xFFFB8C00),
-      top: MediaQuery.of(context).size.height * 0.55,
+      top: MediaQuery.of(context).size.height * 0.37,
+      left: 30,
+    ),
+    _ModuleDef(
+      key: 'visagismo',
+      title: context.l10n.menuVisagismo,
+      icon: Icons.face,
+      color: const Color(0xFF9C27B0),
+      top: MediaQuery.of(context).size.height * 0.49,
       left: 45,
     ),
     _ModuleDef(
@@ -104,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen>
       title: context.l10n.menuVisualHealth,
       icon: Icons.health_and_safety_outlined,
       color: const Color(0xFFFFD600),
-      top: MediaQuery.of(context).size.height * 0.67,
+      top: MediaQuery.of(context).size.height * 0.60,
       left: 60,
     ),
     _ModuleDef(
@@ -112,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen>
       title: context.l10n.menuPhotoSync,
       icon: Icons.sync_alt_rounded,
       color: const Color(0xFF00BFA6),
-      top: MediaQuery.of(context).size.height * 0.79,
+      top: MediaQuery.of(context).size.height * 0.72,
       left: 75,
     ),
   ];
@@ -338,13 +354,16 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
       );
-    } else if (moduleId == 'cosmetic_lenses') {
+    } else if (moduleId == 'visagismo') {
+      // This app already runs AS the Tótem (see the "TÓTEM activa" badge
+      // above) — Visagismo captures save straight to this app's own
+      // internal gallery (see VisagismoResultScreen), no pairing needed.
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => BlocProvider(
-            create: (_) => CosmeticLensesCubit(GalleryStorage()..init()),
-            child: const CosmeticLensesScreen(),
+            create: (_) => VisagismoCubit(),
+            child: const VisagismoEntryScreen(),
           ),
         ),
       );

@@ -136,6 +136,12 @@ abstract class AppLocalizations {
   /// **'Measurements'**
   String get menuMeasurements;
 
+  /// No description provided for @menuVisagismo.
+  ///
+  /// In en, this message translates to:
+  /// **'Visagism'**
+  String get menuVisagismo;
+
   /// No description provided for @menuVisualHealth.
   ///
   /// In en, this message translates to:
@@ -207,6 +213,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Drop image here'**
   String get vmDropHere;
+
+  /// No description provided for @vmCameraPermissionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera permission required'**
+  String get vmCameraPermissionTitle;
+
+  /// No description provided for @vmCameraPermissionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'DigiPad needs camera access to take photos.\nEnable it in Settings › Apps › DigiPad › Permissions.'**
+  String get vmCameraPermissionBody;
+
+  /// No description provided for @vmOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get vmOpenSettings;
+
+  /// No description provided for @vmNoCameraFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No camera was found.'**
+  String get vmNoCameraFound;
+
+  /// No description provided for @vmCameraInitError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start the camera.'**
+  String get vmCameraInitError;
+
+  /// No description provided for @vmAngleCalibrated.
+  ///
+  /// In en, this message translates to:
+  /// **'Angle calibrated to 0°'**
+  String get vmAngleCalibrated;
+
+  /// No description provided for @vmCaptureError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error taking the photo. Try again.'**
+  String get vmCaptureError;
+
+  /// No description provided for @vmCameraAccessNeededTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access needed'**
+  String get vmCameraAccessNeededTitle;
+
+  /// No description provided for @vmCameraAccessNeededBody.
+  ///
+  /// In en, this message translates to:
+  /// **'DigiPad needs to use the camera to take the photo.'**
+  String get vmCameraAccessNeededBody;
+
+  /// No description provided for @vmGivePermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant permission'**
+  String get vmGivePermission;
+
+  /// No description provided for @vmCalibratedAbbr.
+  ///
+  /// In en, this message translates to:
+  /// **'cal'**
+  String get vmCalibratedAbbr;
+
+  /// No description provided for @vmSelectedCountOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String vmSelectedCountOne(int count);
+
+  /// No description provided for @vmSelectedCountOther.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String vmSelectedCountOther(int count);
 
   /// No description provided for @galleryDeleteTitle.
   ///

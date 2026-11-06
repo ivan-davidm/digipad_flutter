@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
+import 'package:digipad_flutter/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -102,18 +103,17 @@ class _VmCameraScreenState extends State<VmCameraScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.grey[900],
-        title: const Text('Permiso de cámara requerido', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'DigiPad necesita acceso a la cámara para tomar fotos.\n'
-          'Habilitalo en Ajustes › Aplicaciones › DigiPad › Permisos.',
-          style: TextStyle(color: Colors.white70),
+        title: Text(context.l10n.vmCameraPermissionTitle, style: const TextStyle(color: Colors.white)),
+        content: Text(
+          context.l10n.vmCameraPermissionBody,
+          style: const TextStyle(color: Colors.white70),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.l10n.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurpleAccent),
             onPressed: () { Navigator.pop(ctx); openAppSettings(); },
-            child: const Text('Abrir Ajustes', style: TextStyle(color: Colors.white)),
+            child: Text(context.l10n.vmOpenSettings, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -126,7 +126,7 @@ class _VmCameraScreenState extends State<VmCameraScreen>
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        if (mounted) setState(() => _cameraError = 'No se encontró ninguna cámara.');
+        if (mounted) setState(() => _cameraError = context.l10n.vmNoCameraFound);
         return;
       }
       final back = cameras.firstWhere(
@@ -150,7 +150,7 @@ class _VmCameraScreenState extends State<VmCameraScreen>
       });
       await controller.setZoomLevel(defaultZoom);
     } catch (e) {
-      if (mounted) setState(() => _cameraError = 'No se pudo iniciar la cámara.');
+      if (mounted) setState(() => _cameraError = context.l10n.vmCameraInitError);
     } finally {
       _isInitializingCamera = false;
     }
@@ -183,9 +183,9 @@ class _VmCameraScreenState extends State<VmCameraScreen>
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_kCalibrationPrefsKey, _angleCalibrationOffset);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Ángulo calibrado a 0°'),
-        duration: Duration(seconds: 2),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.l10n.vmAngleCalibrated),
+        duration: const Duration(seconds: 2),
         backgroundColor: Colors.green,
       ));
     }
@@ -203,7 +203,7 @@ class _VmCameraScreenState extends State<VmCameraScreen>
       if (mounted) {
         setState(() => _isCapturing = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Error al tomar la foto. Probá de nuevo.'),
+          content: Text(context.l10n.vmCaptureError),
           backgroundColor: Colors.red.shade700,
         ));
       }
@@ -274,17 +274,17 @@ class _VmCameraScreenState extends State<VmCameraScreen>
           children: [
             const Icon(Icons.camera_alt, size: 80, color: Colors.white24),
             const SizedBox(height: 24),
-            const Text('Se necesita acceso a la cámara',
+            Text(context.l10n.vmCameraAccessNeededTitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            const Text('DigiPad necesita usar la cámara para tomar la foto.',
-                textAlign: TextAlign.center, style: TextStyle(color: Colors.white70)),
+            Text(context.l10n.vmCameraAccessNeededBody,
+                textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
             const SizedBox(height: 28),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurpleAccent),
               onPressed: _requestCameraPermission,
-              child: const Text('Dar permiso', style: TextStyle(color: Colors.white)),
+              child: Text(context.l10n.vmGivePermission, style: const TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -308,7 +308,7 @@ class _VmCameraScreenState extends State<VmCameraScreen>
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurpleAccent),
               onPressed: _initCamera,
-              child: const Text('Reintentar', style: TextStyle(color: Colors.white)),
+              child: Text(context.l10n.photoSyncRetry, style: const TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -386,7 +386,7 @@ class _VmCameraScreenState extends State<VmCameraScreen>
                   Text('${angle.toStringAsFixed(1)}°',
                       style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
                   if (_angleCalibrationOffset != 0.0)
-                    Text('cal',
+                    Text(context.l10n.vmCalibratedAbbr,
                         style: TextStyle(color: color.withValues(alpha: 0.6), fontSize: 9)),
                 ],
               ),

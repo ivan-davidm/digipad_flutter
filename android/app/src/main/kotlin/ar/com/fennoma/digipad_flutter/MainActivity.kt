@@ -26,6 +26,7 @@ class MainActivity : FlutterActivity() {
                 "native-left-view",
                 NativeYoloViewFactory(flutterEngine.dartExecutor.binaryMessenger)
             )
+
         // Note: HotspotPlugin and NetworkBindingPlugin have been removed.
         // Networking is now handled by the Nearby Connections Flutter plugin
         // (nearby_connections package) which registers itself automatically.

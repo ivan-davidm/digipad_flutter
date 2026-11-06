@@ -59,7 +59,6 @@
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
     <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
-    <uses-feature android:name="android.hardware.camera.ar" android:required="false" />
     <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
     <uses-feature android:name="android.hardware.sensor.gyroscope" android:required="false" />
 
@@ -93,6 +92,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Lets DigiTower appear in the Android "Share" sheet for photos
+                 — e.g. a photo received in WhatsApp — so the client can share
+                 it straight into the measurement editor instead of needing it
+                 saved to a gallery first. Handled by receive_sharing_intent
+                 (see SharedImageIntentHandler); no extra Activity needed, it
+                 attaches to this same one. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+
             <meta-data
                 android:name="io.flutter.embedding.android.EnableFlutterEngineRestart"
                 android:value="true" />
@@ -101,7 +117,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-            
+
         <service
             android:name=".NearbyForegroundService"
             android:exported="false"

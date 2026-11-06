@@ -128,7 +128,9 @@ class _GalleryCardState extends State<GallerySection> {
                 child: Row(
                   children: [
                     Text(
-                      '${_selected.length} seleccionada${_selected.length == 1 ? '' : 's'}',
+                      _selected.length == 1
+                          ? context.l10n.vmSelectedCountOne(_selected.length)
+                          : context.l10n.vmSelectedCountOther(_selected.length),
                       style: const TextStyle(
                           color: Colors.white70, fontSize: 13),
                     ),
@@ -149,8 +151,8 @@ class _GalleryCardState extends State<GallerySection> {
                       },
                       icon: const Icon(Icons.delete_rounded,
                           size: 16, color: Colors.redAccent),
-                      label: const Text('Eliminar',
-                          style: TextStyle(color: Colors.redAccent)),
+                      label: Text(context.l10n.delete,
+                          style: const TextStyle(color: Colors.redAccent)),
                       style: TextButton.styleFrom(
                           visualDensity: VisualDensity.compact),
                     ),
@@ -158,8 +160,8 @@ class _GalleryCardState extends State<GallerySection> {
                       onPressed: _exitSelect,
                       style: TextButton.styleFrom(
                           visualDensity: VisualDensity.compact),
-                      child: const Text('Cancelar',
-                          style: TextStyle(color: Colors.white38)),
+                      child: Text(context.l10n.cancel,
+                          style: const TextStyle(color: Colors.white38)),
                     ),
                   ],
                 ),

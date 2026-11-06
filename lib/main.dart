@@ -9,6 +9,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:digipad_flutter/l10n/arb/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Lets code outside the widget tree (e.g. `SharedImageIntentHandler`, which
+/// reacts to an Android share-sheet intent that can arrive at any time) push
+/// a route regardless of which screen is currently showing.
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -76,6 +81,7 @@ class _MyAppState extends State<MyApp> {
       create: (context) => ActivationCubit(_activationService),
       child: InteractionObserver(
         child: MaterialApp(
+          navigatorKey: rootNavigatorKey,
           title: 'DigiTower 3D Premium',
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),

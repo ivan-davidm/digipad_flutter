@@ -27,6 +27,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get menuMeasurements => 'Medições';
 
   @override
+  String get menuVisagismo => 'Visagismo';
+
+  @override
   String get menuVisualHealth => 'Saúde Visual';
 
   @override
@@ -64,6 +67,51 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get vmDropHere => 'Solte a imagem aqui';
+
+  @override
+  String get vmCameraPermissionTitle => 'Permissão de câmera necessária';
+
+  @override
+  String get vmCameraPermissionBody =>
+      'O DigiPad precisa de acesso à câmera para tirar fotos.\nAtive em Configurações › Aplicativos › DigiPad › Permissões.';
+
+  @override
+  String get vmOpenSettings => 'Abrir Configurações';
+
+  @override
+  String get vmNoCameraFound => 'Nenhuma câmera foi encontrada.';
+
+  @override
+  String get vmCameraInitError => 'Não foi possível iniciar a câmera.';
+
+  @override
+  String get vmAngleCalibrated => 'Ângulo calibrado para 0°';
+
+  @override
+  String get vmCaptureError => 'Erro ao tirar a foto. Tente novamente.';
+
+  @override
+  String get vmCameraAccessNeededTitle => 'Acesso à câmera necessário';
+
+  @override
+  String get vmCameraAccessNeededBody =>
+      'O DigiPad precisa usar a câmera para tirar a foto.';
+
+  @override
+  String get vmGivePermission => 'Conceder permissão';
+
+  @override
+  String get vmCalibratedAbbr => 'cal';
+
+  @override
+  String vmSelectedCountOne(int count) {
+    return '$count selecionada';
+  }
+
+  @override
+  String vmSelectedCountOther(int count) {
+    return '$count selecionadas';
+  }
 
   @override
   String get galleryDeleteTitle => 'Excluir imagem?';

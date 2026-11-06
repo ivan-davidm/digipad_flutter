@@ -41,6 +41,8 @@ dependencies:
   tflite_flutter: 0.12.1
   camera: 0.11.2+1
   image: 4.7.2
+  google_mlkit_face_detection: ^0.13.2
+  receive_sharing_intent: 1.8.1
 
   # File handling and storage
   path: ^1.9.1
@@ -132,6 +134,7 @@ flutter:
     - assets/images/simulations/solar/
     - assets/images/simulations/tint/
     - assets/images/lenses_3d/
+    - assets/images/visagismo/
     - assets/images/
     - assets/svgs/
 
