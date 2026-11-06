@@ -120,6 +120,34 @@ class _MeasurementHubScreenState extends State<MeasurementHubScreen> {
     }
   }
 
+  // Medición remota: the client already has a photo taken WITHOUT the
+  // reference accessory (sent via WhatsApp, email, etc.) — just pick it from
+  // the device gallery and drop straight into the manual/no-accessory editor,
+  // exactly like SharedImageIntentHandler does for images that arrive via the
+  // share sheet. No live camera view and no 4-marker auto-detection here: the
+  // Totem kiosk device has no camera, and there's nothing to auto-detect on
+  // an accessory-less photo anyway.
+  Future<void> _openRemoteMeasurement() async {
+    if (_isCapturing) return;
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+      );
+      if (image == null || !mounted) return;
+      await Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => OpticalEditorScreen(
+          imagePath: image.path,
+          detections: const {},
+          mode: MeasurementMode.sinAccesorio,
+        ),
+      ));
+    } catch (e) {
+      debugPrint('Remote measurement gallery error: $e');
+    }
+  }
+
   void _openInternalGallery() {
     if (_isCapturing) return;
     showDialog(
@@ -181,13 +209,7 @@ class _MeasurementHubScreenState extends State<MeasurementHubScreen> {
           icon: Icons.person_search_outlined,
           label: context.l10n.hubNoAccessory,
           color: Colors.orangeAccent,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  const MeasurementCaptureScreen(mode: MeasurementMode.sinAccesorio),
-            ),
-          ),
+          onTap: _openRemoteMeasurement,
         ),
     ];
 

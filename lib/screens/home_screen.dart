@@ -255,18 +255,18 @@ class _HomeScreenState extends State<HomeScreen>
     final labelFontSize = isTablet ? 20.0 : 12.0;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(50),
+      borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(50),
+          borderRadius: BorderRadius.circular(16),
           child: Container(
             width: buttonWidth,
             height: buttonHeight,
             decoration: BoxDecoration(
               color: def.color.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: def.color.withValues(alpha: 0.4),
                 width: 1.5,
@@ -280,9 +280,9 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ],
             ),
-            padding: const EdgeInsets.only(left: 16, right: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
                   width: iconSize,
@@ -292,9 +292,10 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Icon(def.icon, color: def.color, size: iconSize),
                 ),
                 const SizedBox(width: 12),
-                Expanded(
+                Flexible(
                   child: Text(
                     def.title,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.95),
                       fontSize: labelFontSize,

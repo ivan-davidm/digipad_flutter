@@ -125,13 +125,22 @@ class YoloV8View @JvmOverloads constructor(
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         Log.d("YoloV8View", "onAttachedToWindow")
-        ProcessCameraProvider.getInstance(context).addListener({
+        // Keep a handle to THIS future and reuse it below. Calling
+        // ProcessCameraProvider.getInstance(context) a second time inside the listener
+        // re-enters CameraX's init path on the main thread; on a device with no camera
+        // (e.g. the Totem) CameraX's internal shutdown needs to run a task on the main
+        // thread via runOnMainSync, which can't happen because the main thread is stuck
+        // in that second .get() — a real deadlock, only broken by CameraX's own ~30s
+        // internal timeout ("Timeout to wait main thread execution"), well past Android's
+        // 5s ANR threshold. Reusing the same future's already-resolved result avoids it.
+        val providerFuture = ProcessCameraProvider.getInstance(context)
+        providerFuture.addListener({
             if (isDisposed.get()) {
                 Log.d("YoloV8View", "View disposed during camera initialization, skipping.")
                 return@addListener
             }
             try {
-                cameraProvider = ProcessCameraProvider.getInstance(context).get()
+                cameraProvider = providerFuture.get(3, TimeUnit.SECONDS)
                 findActivity()?.let { activity ->
                     if (activity is LifecycleOwner) {
                         lifecycleOwner = activity
