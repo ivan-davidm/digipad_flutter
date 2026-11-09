@@ -53,7 +53,11 @@ FaceMeasurements? faceMeasurementsFromFace(Face face) {
   }
 
   final foreheadPair = widestPairInBand(0.0, 0.25);
-  final jawPair = widestPairInBand(0.65, 0.9);
+  // Measured higher up the jaw (was 0.65-0.9) to stay clear of the band
+  // right above the chin, where a beard most distorts ML Kit's contour by
+  // filling in what would otherwise be a soft jaw curve — which previously
+  // biased round/chubby faces toward a sharper, more "square" angle reading.
+  final jawPair = widestPairInBand(0.55, 0.78);
   if (foreheadPair == null || jawPair == null) return null;
 
   final foreheadWidth = foreheadPair.$2.x - foreheadPair.$1.x;

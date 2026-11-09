@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'package:digipad_flutter/common/components/d_image.dart';
 import 'package:digipad_flutter/data/local/gallery_storage.dart';
 import 'package:digipad_flutter/screens/features/lenses_3d/cubit/lenses_3d_cubit.dart';
 import 'package:digipad_flutter/screens/features/lenses_3d/presentation/lenses_3d_screen.dart';
@@ -15,8 +14,10 @@ import 'package:digipad_flutter/screens/features/visual_health/cubit/visual_heal
 import 'package:digipad_flutter/screens/features/visual_health/presentation/visual_health_screen.dart';
 import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_cubit.dart';
 import 'package:digipad_flutter/screens/features/visagismo/presentation/visagismo_entry_screen.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:video_player/video_player.dart';
 import 'package:digipad_flutter/l10n/l10n.dart';
 import 'package:digipad_flutter/main.dart';
 import 'package:digipad_flutter/digi_locale.dart';
@@ -34,6 +35,9 @@ class _HomeScreenState extends State<HomeScreen>
   late final TotemCubit _hostCubit;
   late final GalleryStorage _galleryStorage;
 
+  // ── Looping background video ────────────────────────────────────────────────
+  late final VideoPlayerController _backgroundVideoController;
+
   // ── Entrance animation ──────────────────────────────────────────────────────
   late final AnimationController _entranceController;
   static const int _moduleCount = 7;
@@ -50,6 +54,20 @@ class _HomeScreenState extends State<HomeScreen>
     _galleryStorage = GalleryStorage();
     _hostCubit = TotemCubit(storage: _galleryStorage);
 
+    _backgroundVideoController =
+        VideoPlayerController.asset('assets/videos/home_background.mp4')
+          ..setLooping(true)
+          ..setVolume(0)
+          ..initialize()
+              .then((_) {
+                if (mounted) setState(() {});
+                _backgroundVideoController.play();
+              })
+              .catchError((_) {
+                // Some low-end devices lack a usable hardware decoder; fail
+                // silently and keep the plain black fallback background.
+              });
+
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -64,34 +82,34 @@ class _HomeScreenState extends State<HomeScreen>
     _entranceController.dispose();
     _hostCubit.close();
     _sharedImageIntentHandler.dispose();
+    _backgroundVideoController.dispose();
     super.dispose();
   }
 
   // ── Module definitions (order = visual top-to-bottom) ──────────────────────
+  // Straight left-aligned column (per product request 2026-11-08), lower on
+  // screen and with tighter vertical spacing than the previous pass.
   List<_ModuleDef> _modules(BuildContext context) => [
     _ModuleDef(
       key: 'virtual_mirror',
       title: context.l10n.menuVirtualMirror,
-      icon: Icons.face_retouching_natural,
+      icon: Icons.crop_portrait_outlined,
       color: Colors.white,
-      top: MediaQuery.of(context).size.height * 0.02,
-      left: 75,
+      top: MediaQuery.of(context).size.height * 0.20,
     ),
     _ModuleDef(
       key: 'simulations',
       title: context.l10n.menuSimulations,
       icon: Icons.auto_fix_high,
       color: const Color(0xFF4CAF50),
-      top: MediaQuery.of(context).size.height * 0.12,
-      left: 60,
+      top: MediaQuery.of(context).size.height * 0.295,
     ),
     _ModuleDef(
       key: 'lenses_3d',
       title: context.l10n.menuLenses3D,
-      icon: Icons.view_in_ar,
+      icon: CupertinoIcons.eyeglasses,
       color: Colors.white,
-      top: MediaQuery.of(context).size.height * 0.25,
-      left: 45,
+      top: MediaQuery.of(context).size.height * 0.39,
     ),
     // 'cosmetic_lenses' hidden per product decision (2026-11-05) — not
     // deleted, just no longer in this list. To bring it back: re-add its
@@ -104,32 +122,28 @@ class _HomeScreenState extends State<HomeScreen>
       title: context.l10n.menuMeasurements,
       icon: Icons.straighten,
       color: const Color(0xFFFB8C00),
-      top: MediaQuery.of(context).size.height * 0.37,
-      left: 30,
+      top: MediaQuery.of(context).size.height * 0.485,
     ),
     _ModuleDef(
       key: 'visagismo',
       title: context.l10n.menuVisagismo,
       icon: Icons.face,
       color: const Color(0xFF9C27B0),
-      top: MediaQuery.of(context).size.height * 0.49,
-      left: 45,
+      top: MediaQuery.of(context).size.height * 0.58,
     ),
     _ModuleDef(
       key: 'visual_health',
       title: context.l10n.menuVisualHealth,
-      icon: Icons.health_and_safety_outlined,
+      icon: Icons.add_rounded,
       color: const Color(0xFFFFD600),
-      top: MediaQuery.of(context).size.height * 0.60,
-      left: 60,
+      top: MediaQuery.of(context).size.height * 0.675,
     ),
     _ModuleDef(
       key: 'photo_sync',
       title: context.l10n.menuPhotoSync,
       icon: Icons.sync_alt_rounded,
       color: const Color(0xFF00BFA6),
-      top: MediaQuery.of(context).size.height * 0.72,
-      left: 75,
+      top: MediaQuery.of(context).size.height * 0.77,
     ),
   ];
 
@@ -140,100 +154,141 @@ class _HomeScreenState extends State<HomeScreen>
     return BlocProvider.value(
       value: _hostCubit,
       child: Scaffold(
-        body: Container(
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: DImage(imageName: 'background').provider,
-              fit: BoxFit.cover,
-            ),
-          ),
-          child: SafeArea(
-            child: Stack(
-              children: [
-                // ── Staggered module cards ────────────────────────────────────
-                for (int i = 0; i < modules.length; i++)
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // ── Full-screen looping background video ──────────────────────────
+            _buildBackgroundVideo(),
+
+            SafeArea(
+              child: Stack(
+                children: [
+                  // ── Logo, above the module column ─────────────────────────────
                   Positioned(
-                    top: modules[i].top,
-                    left: modules[i].left,
-                    child: _AnimatedModuleItem(
-                      index: i,
-                      total: _moduleCount,
-                      controller: _entranceController,
-                      child: _buildArchMenuItem(
-                        context: context,
-                        def: modules[i],
-                        onTap: () => _navigateToModule(context, modules[i].key),
-                      ),
+                    top: MediaQuery.of(context).size.height * 0.03,
+                    left: 64,
+                    child: Image.asset(
+                      'assets/images/logo1.png',
+                      height: MediaQuery.of(context).size.height * 0.175,
+                      fit: BoxFit.contain,
                     ),
                   ),
 
-                // ── Language picker ───────────────────────────────────────────
-                Positioned(
-                  top: 8,
-                  right: 24,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<LanguageCodeType>(
-                        dropdownColor: Colors.grey.shade900,
-                        iconEnabledColor: Colors.white,
-                        value: LanguageCodeType.values.firstWhere(
-                          (e) =>
-                              e.name ==
-                              Localizations.localeOf(context).languageCode,
-                          orElse: () => LanguageCodeType.en,
+                  // ── Straight left-aligned column of module cards ──────────────
+                  for (int i = 0; i < modules.length; i++)
+                    Positioned(
+                      top: modules[i].top,
+                      left: 32,
+                      child: _AnimatedModuleItem(
+                        index: i,
+                        total: _moduleCount,
+                        controller: _entranceController,
+                        child: _buildArchMenuItem(
+                          context: context,
+                          def: modules[i],
+                          onTap: () =>
+                              _navigateToModule(context, modules[i].key),
                         ),
-                        items: LanguageCodeType.values.map((e) {
-                          final code = e.name;
-                          final label = code == 'en'
-                              ? context.l10n.languageEnglish
-                              : code == 'es'
-                              ? context.l10n.languageSpanish
-                              : context.l10n.languagePortuguese;
-                          return DropdownMenuItem(
-                            value: e,
-                            child: Text(
-                              label,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: MediaQuery.of(context).size.shortestSide >= 550 ? 16.0 : 11.0,
+                      ),
+                    ),
+
+                  // ── Language picker ───────────────────────────────────────────
+                  Positioned(
+                    top: 8,
+                    right: 24,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<LanguageCodeType>(
+                          dropdownColor: Colors.grey.shade900,
+                          iconEnabledColor: Colors.white,
+                          value: LanguageCodeType.values.firstWhere(
+                            (e) =>
+                                e.name ==
+                                Localizations.localeOf(context).languageCode,
+                            orElse: () => LanguageCodeType.en,
+                          ),
+                          items: LanguageCodeType.values.map((e) {
+                            final code = e.name;
+                            final label = code == 'en'
+                                ? context.l10n.languageEnglish
+                                : code == 'es'
+                                ? context.l10n.languageSpanish
+                                : context.l10n.languagePortuguese;
+                            return DropdownMenuItem(
+                              value: e,
+                              child: Text(
+                                label,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize:
+                                      MediaQuery.of(
+                                            context,
+                                          ).size.shortestSide >=
+                                          550
+                                      ? 16.0
+                                      : 11.0,
+                                ),
                               ),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val == null) return;
-                          MyApp.setLocale(context, Locale(val.name));
-                        },
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val == null) return;
+                            MyApp.setLocale(context, Locale(val.name));
+                          },
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                // ── TOTEM active badge (top-left, below language picker) ──────
-                Positioned(
-                  top: 8,
-                  left: 12,
-                  child: BlocBuilder<TotemCubit, TotemState>(
-                    bloc: _hostCubit,
-                    builder: (context, state) {
-                      if (state is! TotemActive) {
-                        return const SizedBox.shrink();
-                      }
-                      return GestureDetector(
-                        onTap: () => _navigateToModule(context, 'photo_sync'),
-                        child: _TotemActiveBadge(imageCount: state.photoCount),
-                      );
-                    },
+                  // ── TOTEM active badge (top-left, below language picker) ──────
+                  Positioned(
+                    top: 8,
+                    left: 12,
+                    child: BlocBuilder<TotemCubit, TotemState>(
+                      bloc: _hostCubit,
+                      builder: (context, state) {
+                        if (state is! TotemActive) {
+                          return const SizedBox.shrink();
+                        }
+                        return GestureDetector(
+                          onTap: () => _navigateToModule(context, 'photo_sync'),
+                          child: _TotemActiveBadge(
+                            imageCount: state.photoCount,
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Full-bleed background video (cover, no letterboxing, any screen) ───────
+  Widget _buildBackgroundVideo() {
+    if (!_backgroundVideoController.value.isInitialized) {
+      return const ColoredBox(color: Colors.black);
+    }
+    final videoSize = _backgroundVideoController.value.size;
+    return ColoredBox(
+      color: Colors.black,
+      child: ClipRect(
+        child: FittedBox(
+          fit: BoxFit.cover,
+          child: SizedBox(
+            width: videoSize.width,
+            height: videoSize.height,
+            child: VideoPlayer(_backgroundVideoController),
           ),
         ),
       ),
@@ -423,7 +478,6 @@ class _ModuleDef {
   final IconData icon;
   final Color color;
   final double top;
-  final double left;
 
   const _ModuleDef({
     required this.key,
@@ -431,7 +485,6 @@ class _ModuleDef {
     required this.icon,
     required this.color,
     required this.top,
-    required this.left,
   });
 }
 

@@ -466,7 +466,9 @@ class OpticalController extends ChangeNotifier {
 
   void handleDrag(Offset delta, double scale) {
     if (selectedPoint != null) {
-      selectedPoint!.position += (delta / scale);
+      final actualDelta = delta / scale;
+      selectedPoint!.position += actualDelta;
+      _mirrorToLeftLensIfNeeded(selectedPoint!.type, actualDelta.dx);
       calculateFormulas();
       notifyListeners();
     }
@@ -475,8 +477,32 @@ class OpticalController extends ChangeNotifier {
   void nudgeSelectedPoint(double dx, double dy) {
     if (selectedPoint != null) {
       selectedPoint!.position += Offset(dx, dy);
+      _mirrorToLeftLensIfNeeded(selectedPoint!.type, dx);
       calculateFormulas();
       notifyListeners();
+    }
+  }
+
+  /// Dragging a right-lens corner replicates the horizontal movement
+  /// (mirrored) onto the matching left-lens corner, since the two frames
+  /// are symmetric across the bridge, and snaps that mirrored corner to the
+  /// same height as the dragged one. Left-lens corners stay independent and
+  /// never move the right side.
+  void _mirrorToLeftLensIfNeeded(DetectionType type, double dx) {
+    DetectionType? mirrorType;
+    if (type == DetectionType.lensRightTop) {
+      mirrorType = DetectionType.lensLeftTop;
+    } else if (type == DetectionType.lensRightBottom) {
+      mirrorType = DetectionType.lensLeftBottom;
+    }
+    if (mirrorType == null) return;
+
+    final draggedY = selectedPoint!.position.dy;
+    for (final p in points) {
+      if (p.type == mirrorType) {
+        p.position = Offset(p.position.dx - dx, draggedY);
+        break;
+      }
     }
   }
 

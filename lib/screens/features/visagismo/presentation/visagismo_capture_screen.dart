@@ -200,14 +200,15 @@ class _FaceGuideOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = faceGuideSize(context);
     return IgnorePointer(
       child: Center(
         child: Container(
-          width: kFaceGuideWidth,
-          height: kFaceGuideHeight,
+          width: size.width,
+          height: size.height,
           decoration: BoxDecoration(
             shape: BoxShape.rectangle,
-            borderRadius: BorderRadius.circular(kFaceGuideBorderRadius),
+            borderRadius: BorderRadius.circular(faceGuideBorderRadius(context)),
             border: Border.all(color: Colors.white38, width: 2),
           ),
         ),
