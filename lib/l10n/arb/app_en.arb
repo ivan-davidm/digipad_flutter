@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "Digipad",
+  "appTitle": "DigiTower 3D",
   "@appTitle": {
     "description": "The title of the application"
   },
@@ -9,6 +9,7 @@
   "menuLenses3D": "Lenses 3D",
   "menuCosmeticLenses": "Cosmetic Lenses",
   "menuMeasurements": "Measurements",
+  "menuVisagismo": "Visagism",
   "menuVisualHealth": "Visual Health",
   "ok": "OK",
   "cancel": "Cancel",
@@ -28,6 +29,33 @@
   "vmDragAndDrop": "Drag and drop photos",
   "vmPickOrTake": "Please pick a photo from your gallery or take a new one",
   "vmDropHere": "Drop image here",
+  "vmCameraPermissionTitle": "Camera permission required",
+  "vmCameraPermissionBody": "DigiPad needs camera access to take photos.\nEnable it in Settings › Apps › DigiPad › Permissions.",
+  "vmOpenSettings": "Open Settings",
+  "vmNoCameraFound": "No camera was found.",
+  "vmCameraInitError": "Couldn't start the camera.",
+  "vmAngleCalibrated": "Angle calibrated to 0°",
+  "vmCaptureError": "Error taking the photo. Try again.",
+  "vmCameraAccessNeededTitle": "Camera access needed",
+  "vmCameraAccessNeededBody": "DigiPad needs to use the camera to take the photo.",
+  "vmGivePermission": "Grant permission",
+  "vmCalibratedAbbr": "cal",
+  "vmSelectedCountOne": "{count} selected",
+  "@vmSelectedCountOne": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "vmSelectedCountOther": "{count} selected",
+  "@vmSelectedCountOther": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "galleryDeleteTitle": "Delete image?",
   "galleryDeleteContent": "This will permanently remove the image from storage.",
   "vhNoTests": "No tests loaded yet.",

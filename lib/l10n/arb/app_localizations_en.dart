@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Digipad';
+  String get appTitle => 'DigiTower 3D';
 
   @override
   String get menuVirtualMirror => 'Virtual Mirror';
@@ -25,6 +25,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get menuMeasurements => 'Measurements';
+
+  @override
+  String get menuVisagismo => 'Visagism';
 
   @override
   String get menuVisualHealth => 'Visual Health';
@@ -65,6 +68,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get vmDropHere => 'Drop image here';
+
+  @override
+  String get vmCameraPermissionTitle => 'Camera permission required';
+
+  @override
+  String get vmCameraPermissionBody =>
+      'DigiPad needs camera access to take photos.\nEnable it in Settings › Apps › DigiPad › Permissions.';
+
+  @override
+  String get vmOpenSettings => 'Open Settings';
+
+  @override
+  String get vmNoCameraFound => 'No camera was found.';
+
+  @override
+  String get vmCameraInitError => 'Couldn\'t start the camera.';
+
+  @override
+  String get vmAngleCalibrated => 'Angle calibrated to 0°';
+
+  @override
+  String get vmCaptureError => 'Error taking the photo. Try again.';
+
+  @override
+  String get vmCameraAccessNeededTitle => 'Camera access needed';
+
+  @override
+  String get vmCameraAccessNeededBody =>
+      'DigiPad needs to use the camera to take the photo.';
+
+  @override
+  String get vmGivePermission => 'Grant permission';
+
+  @override
+  String get vmCalibratedAbbr => 'cal';
+
+  @override
+  String vmSelectedCountOne(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String vmSelectedCountOther(int count) {
+    return '$count selected';
+  }
 
   @override
   String get galleryDeleteTitle => 'Delete image?';

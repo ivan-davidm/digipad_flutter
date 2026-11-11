@@ -1,8 +1,8 @@
-# DigiPad Flutter - Project Context
+# DigiTower 3D Premium (Flutter) - Project Context
 
 ## Project Overview
 
-**DigiPad 3D Max Premium** is a professional optical measurement and simulation app built with Flutter. It provides optical professionals with tools to:
+**DigiTower 3D Premium** is a professional optical measurement and simulation app built with Flutter. It provides optical professionals with tools to:
 - Measure and evaluate optical parameters using device sensors
 - Simulate lens effects and corrections (cosmetic lenses, bifocals, photochromic, etc.)
 - Process and analyze optical measurements through camera-based detection

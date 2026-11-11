@@ -1,4 +1,5 @@
 import 'package:digipad_flutter/common/utils/responsive_utils.dart';
+import 'package:digipad_flutter/l10n/l10n.dart';
 import 'package:digipad_flutter/screens/features/virtual_mirror/cubit/virtual_mirror_cubit.dart';
 import 'package:digipad_flutter/screens/features/virtual_mirror/cubit/virtual_mirror_state.dart';
 import 'package:digipad_flutter/screens/features/virtual_mirror/widgets/control_panel.dart';
@@ -40,7 +41,7 @@ class _VirtualMirrorScreenState extends State<VirtualMirrorScreen> {
                         const EdgeInsets.symmetric(vertical: 8),
                       ),
                       child: Text(
-                        'Drag and drop photos',
+                        context.l10n.vmDragAndDrop,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
@@ -128,7 +129,7 @@ class _VirtualMirrorScreenState extends State<VirtualMirrorScreen> {
                                 child: Center(
                                   child: Text(
                                     textAlign: TextAlign.center,
-                                    'No images loaded yet. \nCapture one or select from your gallery to get started!',
+                                    context.l10n.vmNoImages,
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: responsive.fontSize(24),

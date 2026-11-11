@@ -20,6 +20,13 @@ class MeasurementHubScreen extends StatefulWidget {
 class _MeasurementHubScreenState extends State<MeasurementHubScreen> {
   static const Color _bg = Color(0xFF121212);
 
+  // Flagged for later: hidden from the hub per product decision, kept wired
+  // so they can be turned back on without re-doing the capture/navigation code.
+  static const bool _kShowNewMeasurementTile = false;
+  // Re-enabled 2026-11-05: lets the client send a photo straight to the
+  // editor without requiring the 4-marker accessory detection first.
+  static const bool _kShowRemoteMeasurementTile = true;
+
   static const _creationParams = <String, dynamic>{
     'modelPath': 'assets/model3.tflite',
     'labelPath': 'assets/labels.txt',
@@ -113,6 +120,34 @@ class _MeasurementHubScreenState extends State<MeasurementHubScreen> {
     }
   }
 
+  // Medición remota: the client already has a photo taken WITHOUT the
+  // reference accessory (sent via WhatsApp, email, etc.) — just pick it from
+  // the device gallery and drop straight into the manual/no-accessory editor,
+  // exactly like SharedImageIntentHandler does for images that arrive via the
+  // share sheet. No live camera view and no 4-marker auto-detection here: the
+  // Totem kiosk device has no camera, and there's nothing to auto-detect on
+  // an accessory-less photo anyway.
+  Future<void> _openRemoteMeasurement() async {
+    if (_isCapturing) return;
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+      );
+      if (image == null || !mounted) return;
+      await Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => OpticalEditorScreen(
+          imagePath: image.path,
+          detections: const {},
+          mode: MeasurementMode.sinAccesorio,
+        ),
+      ));
+    } catch (e) {
+      debugPrint('Remote measurement gallery error: $e');
+    }
+  }
+
   void _openInternalGallery() {
     if (_isCapturing) return;
     showDialog(
@@ -124,6 +159,79 @@ class _MeasurementHubScreenState extends State<MeasurementHubScreen> {
           await _processImagePath(file.path, angle: angle);
         },
       ),
+    );
+  }
+
+  // ── Tile grid ────────────────────────────────────────────────────────────────
+
+  /// 2x2 grid instead of a stacked column — each tile fills its own quarter
+  /// of the available area exactly (computed from the real constraints, not
+  /// a fixed aspect ratio), so tiles stay large and the icon/label inside
+  /// each one scale with it (see `_HubTile`) instead of looking small inside
+  /// oversized empty cards.
+  Widget _buildTileGrid(BuildContext context) {
+    final tiles = <Widget>[
+      // Flagged off per product decision — kept for later re-activation.
+      if (_kShowNewMeasurementTile)
+        _HubTile(
+          icon: Icons.camera_alt,
+          label: context.l10n.hubNewMeasurement,
+          color: Colors.deepPurpleAccent,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MeasurementCaptureScreen()),
+          ),
+        ),
+      _HubTile(
+        icon: Icons.sd_storage_outlined,
+        label: context.l10n.vmInternalGallery,
+        color: Colors.tealAccent,
+        onTap: _openInternalGallery,
+      ),
+      _HubTile(
+        icon: Icons.assignment_outlined,
+        label: context.l10n.myMeasurements,
+        color: const Color(0xFFBB86FC),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MeasurementsListScreen()),
+        ),
+      ),
+      _HubTile(
+        icon: Icons.photo_library_outlined,
+        label: context.l10n.galleryTitle,
+        color: Colors.blueAccent,
+        onTap: _openSystemGallery,
+      ),
+      // Flagged off per product decision — kept for later re-activation.
+      if (_kShowRemoteMeasurementTile)
+        _HubTile(
+          icon: Icons.person_search_outlined,
+          label: context.l10n.hubNoAccessory,
+          color: Colors.orangeAccent,
+          onTap: _openRemoteMeasurement,
+        ),
+    ];
+
+    const spacing = 16.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = 2;
+        final rows = (tiles.length / crossAxisCount).ceil();
+        final cellWidth = (constraints.maxWidth - spacing) / crossAxisCount;
+        final cellHeight = (constraints.maxHeight - spacing * (rows - 1)) / rows;
+        return GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            mainAxisSpacing: spacing,
+            crossAxisSpacing: spacing,
+            childAspectRatio: cellWidth / cellHeight,
+          ),
+          itemCount: tiles.length,
+          itemBuilder: (context, index) => tiles[index],
+        );
+      },
     );
   }
 
@@ -201,60 +309,7 @@ class _MeasurementHubScreenState extends State<MeasurementHubScreen> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      children: [
-                        _HubTile(
-                          icon: Icons.camera_alt,
-                          label: context.l10n.hubNewMeasurement,
-                          color: Colors.deepPurpleAccent,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MeasurementCaptureScreen(),
-                            ),
-                          ),
-                        ),
-                        _HubTile(
-                          icon: Icons.photo_library_outlined,
-                          label: context.l10n.galleryTitle,
-                          color: Colors.blueAccent,
-                          onTap: _openSystemGallery,
-                        ),
-                        _HubTile(
-                          icon: Icons.sd_storage_outlined,
-                          label: context.l10n.vmInternalGallery,
-                          color: Colors.tealAccent,
-                          onTap: _openInternalGallery,
-                        ),
-                        _HubTile(
-                          icon: Icons.assignment_outlined,
-                          label: context.l10n.myMeasurements,
-                          color: const Color(0xFFBB86FC),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MeasurementsListScreen(),
-                            ),
-                          ),
-                        ),
-                        _HubTile(
-                          icon: Icons.person_search_outlined,
-                          label: context.l10n.hubNoAccessory,
-                          color: Colors.orangeAccent,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MeasurementCaptureScreen(
-                                mode: MeasurementMode.sinAccesorio,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: _buildTileGrid(context),
                   ),
                 ),
               ],
@@ -309,22 +364,36 @@ class _HubTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: color.withValues(alpha: 0.45), width: 1.5),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 52),
-            const SizedBox(height: 14),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                height: 1.3,
+        // Icon/label scale off this tile's own rendered size (not a fixed
+        // pixel value) so they stay proportionate whether the grid cell ends
+        // up small (a phone) or large (the Totem's big screen).
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final iconSize = (constraints.maxHeight * 0.32).clamp(40.0, 110.0);
+            final fontSize = (constraints.maxHeight * 0.09).clamp(15.0, 28.0);
+            return Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: color, size: iconSize),
+                  SizedBox(height: constraints.maxHeight * 0.05),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w600,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

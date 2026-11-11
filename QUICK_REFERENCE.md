@@ -1,4 +1,4 @@
-# DigiPad - Quick Reference for Developers
+# DigiTower 3D Premium - Quick Reference for Developers
 
 ## 🎯 Current Issue (Critical)
 

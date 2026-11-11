@@ -1,4 +1,4 @@
-# Context Setup Summary - DigiPad Project
+# Context Setup Summary - DigiTower 3D Project
 
 ## What Was Created
 
@@ -85,7 +85,7 @@ I've created **comprehensive project context** across multiple files so that whe
 **Location:** `C:\Users\ivand\.claude\projects\Q--REPO-digipad\memory\`
 
 #### a) **project_overview.md**
-Quick summary of what DigiPad is and why the bug matters
+Quick summary of what DigiTower 3D is and why the bug matters
 
 #### b) **pantoscopic_angle_bug.md**
 Detailed bug description with:
@@ -175,7 +175,7 @@ The memory files are **automatically injected** into future Claude Code sessions
 3. **Agents see context immediately** → No need to re-explain
 
 ### What Agents Will Know
-- ✅ Project is DigiPad (Flutter optical measurement app)
+- ✅ Project is DigiTower 3D (Flutter optical measurement app)
 - ✅ Core bug is pantoscopic angle calculation
 - ✅ Bug is in `native_split_screen.dart` lines 67-68
 - ✅ Architecture patterns (BLoC, MethodChannel, etc.)
@@ -221,7 +221,7 @@ following the steps in docs/TESTING_GUIDE.md.
 
 ### Option 2: Explore the Full Project
 ```
-Analyze the full DigiPad project structure and create a summary of 
+Analyze the full DigiTower 3D project structure and create a summary of 
 the camera + optical measurement pipeline.
 ```
 
@@ -270,7 +270,7 @@ How do I test the pantoscopic angle fix on an Android device?
 When a new agent starts, it will automatically follow this path:
 
 1. **Load Memory Index** (automatic)
-   - See: "This is DigiPad, a Flutter optical measurement app"
+   - See: "This is DigiTower 3D, a Flutter optical measurement app"
    - See: "There's a pantoscopic angle bug in native_split_screen.dart"
 
 2. **Reference CLAUDE.md** (when confused)

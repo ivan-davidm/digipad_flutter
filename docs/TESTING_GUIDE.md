@@ -1,4 +1,4 @@
-# DigiPad Testing Guide - Pantoscopic Angle Fix
+# DigiTower 3D Testing Guide - Pantoscopic Angle Fix
 
 ## Overview
 This guide walks you through testing the pantoscopic angle fix on a real device.
@@ -22,7 +22,7 @@ flutter build ios --release        # iOS
 
 ### 2. Have a Comparison Tool
 - **Recommendation:** Use the device's built-in accelerometer app or third-party accelerometer viewer
-- This lets you compare DigiPad's angle against a reference implementation
+- This lets you compare DigiTower 3D's angle against a reference implementation
 
 ### 3. Prepare Test Environment
 - **Quiet location** with no obstructions (won't affect testing, but better for photos)
@@ -39,7 +39,7 @@ flutter build ios --release        # iOS
 **Objective:** Verify angle is near 0° when device is upright
 
 **Steps:**
-1. Open DigiPad
+1. Open DigiTower 3D
 2. Navigate to camera screen (`NativeSplitScreen`)
 3. Hold device **perfectly vertical** in front of you
    - Top of screen pointing up
@@ -188,12 +188,12 @@ flutter build ios --release        # iOS
 **Prerequisite:** Install an accelerometer app (e.g., "Sensor Box for Android")
 
 **Steps:**
-1. Open **DigiPad** and **reference app** side-by-side
+1. Open **DigiTower 3D** and **reference app** side-by-side
 2. Tilt device to a known angle
 3. Compare displayed values
 
 **Expected Result:**
-- DigiPad angle ≈ reference app angle (within ±2°)
+- DigiTower 3D angle ≈ reference app angle (within ±2°)
 
 ---
 
@@ -202,7 +202,7 @@ flutter build ios --release        # iOS
 
 **Steps:**
 1. Tilt device to 45° angle (easiest to visualize)
-2. Record DigiPad's angle reading
+2. Record DigiTower 3D's angle reading
 
 **Expected Result:**
 - Should be approximately **45°** (not 0°, not 90°, not negative)
@@ -303,7 +303,7 @@ Print and fill this out for documentation:
 ```
 Device Model: _______________
 OS Version: _______________
-DigiPad Version: _______________
+DigiTower 3D Version: _______________
 Test Date: _______________
 
 Test Results:

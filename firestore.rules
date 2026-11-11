@@ -8,7 +8,27 @@ service cloud.firestore {
     match /device_activations/{deviceId} {
       allow read, write: if true;
     }
-    
+
+    // Visagismo frame catalog: shared across all ópticas. Managed by a
+    // future admin tool, not by the app itself — clients only read it.
+    match /frame_catalog/{frameId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Óptica accounts and their premium-frame entitlements. Reads are
+    // public for now (no auth model exists yet in this app); writes are
+    // denied from the client until a real purchasing/admin flow exists.
+    match /opticas/{opticaId} {
+      allow read: if true;
+      allow write: if false;
+
+      match /entitlements/{frameId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
     // Default deny for other collections
     match /{document=**} {
       allow read, write: if false;

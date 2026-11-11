@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class ActivationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -17,6 +18,7 @@ class ActivationService {
   static const int _maxOfflineInteractions = 1000;
   static const String _isApprovedKey = 'is_device_approved_locally';
   static const String _savedEmailKey = 'saved_activation_email';
+  static const String _deviceIdKey = 'activation_device_id';
 
   SharedPreferences? _prefs;
   Future<SharedPreferences> get _sharedPrefs async {
@@ -75,20 +77,26 @@ class ActivationService {
     await prefs.setBool(_isApprovedKey, approved);
   }
 
-  Future<String> _getDeviceId() async {
+  // Note: we deliberately do NOT derive this from device_info_plus.
+  // On Android, `androidInfo.id` maps to Build.ID, which is the OS build
+  // identifier (e.g. "TQ3A.230901.001") — identical across every device
+  // running the same firmware/OTA image, not a per-device identifier. Two
+  // unrelated physical devices (different stores, different owners) can
+  // easily share it, which previously caused one activation to collide
+  // with and overwrite/delete another. A locally generated, persisted
+  // UUID is guaranteed unique per install regardless of platform quirks.
+  Future<String> getDeviceId() async {
     if (_cachedDeviceId != null) return _cachedDeviceId!;
 
-    if (Platform.isAndroid) {
-      final androidInfo = await _deviceInfo.androidInfo;
-      _cachedDeviceId = androidInfo.id;
-    } else if (Platform.isIOS) {
-      final iosInfo = await _deviceInfo.iosInfo;
-      _cachedDeviceId = iosInfo.identifierForVendor ?? 'unknown_ios_id';
-    } else {
-      _cachedDeviceId = 'unknown_device';
+    final prefs = await _sharedPrefs;
+    String? storedId = prefs.getString(_deviceIdKey);
+    if (storedId == null) {
+      storedId = const Uuid().v4();
+      await prefs.setString(_deviceIdKey, storedId);
     }
 
-    return _cachedDeviceId!;
+    _cachedDeviceId = storedId;
+    return storedId;
   }
 
   Future<Map<String, dynamic>> _getDeviceInfo() async {
@@ -176,7 +184,7 @@ class ActivationService {
   Stream<DocumentSnapshot<Map<String, dynamic>>?> getActivationStream(
     String email,
   ) async* {
-    final deviceId = await _getDeviceId();
+    final deviceId = await getDeviceId();
     final docId = '${email}_$deviceId';
     yield* _firestore.collection(_collectionName).doc(docId).snapshots();
   }
@@ -186,7 +194,7 @@ class ActivationService {
       final savedEmail = await getSavedEmail();
       if (savedEmail == null) return false;
 
-      final deviceId = await _getDeviceId();
+      final deviceId = await getDeviceId();
       final docId = '${savedEmail}_$deviceId';
       final doc = await _firestore.collection(_collectionName).doc(docId).get();
 
@@ -203,7 +211,7 @@ class ActivationService {
 
   Future<void> updateLastAccess(String email) async {
     try {
-      final deviceId = await _getDeviceId();
+      final deviceId = await getDeviceId();
       final docId = '${email}_$deviceId';
       await _firestore.collection(_collectionName).doc(docId).update({
         'lastAccess': FieldValue.serverTimestamp(),
@@ -212,31 +220,22 @@ class ActivationService {
   }
 
   Future<void> requestActivation(String email) async {
-    final deviceId = await _getDeviceId();
+    final deviceId = await getDeviceId();
 
-    final deviceQuery = await _firestore
-        .collection(_collectionName)
-        .where('deviceId', isEqualTo: deviceId)
-        .limit(1)
-        .get();
-
-    if (deviceQuery.docs.isNotEmpty) {
-      final existingDoc = deviceQuery.docs.first;
-      final existingData = existingDoc.data();
-
-      if (existingData['email'] == email) {
-        await existingDoc.reference.update({
-          'lastRequestDate': FieldValue.serverTimestamp(),
-          'lastAccess': FieldValue.serverTimestamp(),
-        });
-        return;
-      } else {
-        await existingDoc.reference.delete();
-      }
-    }
-
+    // Look up this exact email+device pair directly by its document id.
+    // We never search/match by deviceId alone: a deviceId collision with
+    // a *different* email must never delete or touch that other account.
     final docId = '${email}_$deviceId';
     final docRef = _firestore.collection(_collectionName).doc(docId);
+
+    final existingDoc = await docRef.get();
+    if (existingDoc.exists) {
+      await docRef.update({
+        'lastRequestDate': FieldValue.serverTimestamp(),
+        'lastAccess': FieldValue.serverTimestamp(),
+      });
+      return;
+    }
 
     late final Map<String, dynamic> deviceInfo;
     late final String? ipAddress;

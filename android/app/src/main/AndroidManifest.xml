@@ -1,77 +1,102 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="ar.com.digipad">
-
     <uses-sdk
         android:minSdkVersion="23"
         tools:replace="android:minSdkVersion"
-        tools:overrideLibrary="com.baseflow.geolocator,com.baseflow.geolocator.android" />
-
+        tools:overrideLibrary="com.baseflow.geolocator,com.baseflow.geolocator.android"/>
     <!-- Core permissions -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.FLASHLIGHT" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"/>
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission
+        android:name="android.permission.CAMERA"/>
+    <uses-permission
+        android:name="android.permission.FLASHLIGHT"/>
+    <uses-permission
+        android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission
+        android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission
+        android:name="android.permission.GET_ACCOUNTS"/>
     <!-- Internet / network state -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
+    <uses-permission
+        android:name="android.permission.INTERNET"/>
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <!-- Nearby Connections -->
     <!-- WiFi -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission
+        android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission
+        android:name="android.permission.CHANGE_WIFI_STATE"/>
     <!-- Receive the LAN Totem discovery UDP broadcast beacon -->
-    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
-    
+    <uses-permission
+        android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
     <!-- Foreground Service -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"/>
     <!-- FOREGROUND_SERVICE_CONNECTED_DEVICE requires API 34+ -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"
-        tools:node="replace" />
-
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"
+        tools:node="replace"/>
     <!-- Bluetooth (Required for Nearby) -->
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"/>
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"/>
     <!-- Location (Required for discovery/advertising on most versions) -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:node="replace" />
+    <uses-permission
+        android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION"
+        tools:node="replace"/>
     <!-- Bluetooth (required on API 31+) -->
-    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" tools:node="replace" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" tools:node="replace" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADVERTISE"
+        tools:node="replace"/>
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_CONNECT"
+        tools:node="replace"/>
     <!-- neverForLocation: BLE scan for Nearby discovery is not used to derive
          physical location. Keeps discovery working on Android 12+ without the
          location permission / location-services being tied to it. -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation"
-        tools:node="replace" />
+        tools:node="replace"/>
     <!-- WiFi (required on API 33+) -->
-    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+    <uses-permission
+        android:name="android.permission.NEARBY_WIFI_DEVICES"
         android:usesPermissionFlags="neverForLocation"
         tools:node="replace"
-        tools:targetApi="tiramisu" />
-
-    <uses-feature android:name="android.hardware.camera" />
-    <uses-feature android:name="android.hardware.camera.autofocus" />
-    <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
-    <uses-feature android:name="android.hardware.camera.ar" android:required="false" />
-    <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
-    <uses-feature android:name="android.hardware.sensor.gyroscope" android:required="false" />
-
+        tools:targetApi="tiramisu"/>
+    <uses-feature
+        android:name="android.hardware.camera"/>
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"/>
+    <uses-feature
+        android:name="android.hardware.camera.flash"
+        android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.sensor.accelerometer"
+        android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.sensor.gyroscope"
+        android:required="false"/>
     <application
         android:name="${applicationName}"
-        android:label="DigiPad 3D Max Premium"
+        android:label="DigiTower 3D Premium"
         android:icon="@mipmap/launcher_icon"
         android:allowBackup="false"
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="true"
         android:largeHeap="true">
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -81,45 +106,60 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize"
-            android:resizeableActivity="false"
-            android:screenOrientation="portrait">
-
+            android:resizeableActivity="false">
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-
+                android:resource="@style/NormalTheme"/>
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-
+            <!-- Lets DigiTower appear in the Android "Share" sheet for photos
+                 — e.g. a photo received in WhatsApp — so the client can share
+                 it straight into the measurement editor instead of needing it
+                 saved to a gallery first. Handled by receive_sharing_intent
+                 (see SharedImageIntentHandler); no extra Activity needed, it
+                 attaches to this same one. -->
+            <intent-filter>
+                <action
+                    android:name="android.intent.action.SEND"/>
+                <category
+                    android:name="android.intent.category.DEFAULT"/>
+                <data
+                    android:mimeType="image/*"/>
+            </intent-filter>
+            <intent-filter>
+                <action
+                    android:name="android.intent.action.SEND_MULTIPLE"/>
+                <category
+                    android:name="android.intent.category.DEFAULT"/>
+                <data
+                    android:mimeType="image/*"/>
+            </intent-filter>
             <meta-data
                 android:name="io.flutter.embedding.android.EnableFlutterEngineRestart"
-                android:value="true" />
+                android:value="true"/>
         </activity>
-
         <meta-data
             android:name="flutterEmbedding"
-            android:value="2" />
-            
+            android:value="2"/>
         <service
             android:name=".NearbyForegroundService"
             android:exported="false"
-            android:foregroundServiceType="connectedDevice" />
-
+            android:foregroundServiceType="connectedDevice"/>
         <!-- Override geolocator's service to remove foregroundServiceType (API 29+ attribute) -->
         <service
             android:name="com.baseflow.geolocator.GeolocatorLocationService"
             android:enabled="true"
             android:exported="false"
-            tools:node="replace" />
+            tools:node="replace"/>
     </application>
-
     <queries>
         <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT" />
-            <data android:mimeType="text/plain" />
+            <action
+                android:name="android.intent.action.PROCESS_TEXT"/>
+            <data
+                android:mimeType="text/plain"/>
         </intent>
     </queries>
-
 </manifest>

@@ -4,7 +4,7 @@ A new Flutter project.
 
 ## Getting Started
 
-# DigiPad
+# DigiTower 3D
 
 A Flutter-based recreation of the DigiPad application with modern cross-platform support.
 
