@@ -66,10 +66,16 @@ class FaceShapeResult {
 const double _kElongatedWidthHeightRatioMax = 0.72;
 const double _kBalancedWidthHeightRatioMin = 0.78;
 const double _kBalancedWidthHeightRatioMax = 1.05;
-const double _kRoundJawAngleMinDeg = 150.0;
-const double _kRoundChinSharpnessMax = 0.35;
-const double _kSquareJawAngleMaxDeg = 130.0;
-const double _kSquareJawToCheekRatioMin = 0.90;
+// Round is checked first and only needs to clear a lower jaw-angle bar than
+// before (was 150): a beard or hair along the jaw edge biases the ML Kit
+// contour toward sharper-looking corners, so a genuinely round/chubby jaw can
+// measure well below 150deg. Square's bar was tightened correspondingly (was
+// 130) so it only fires for a jaw that's unambiguously angular, instead of
+// swallowing the whole 130-150deg gray zone that used to fall through to it.
+const double _kRoundJawAngleMinDeg = 138.0;
+const double _kRoundChinSharpnessMax = 0.42;
+const double _kSquareJawAngleMaxDeg = 118.0;
+const double _kSquareJawToCheekRatioMin = 0.93;
 const double _kHeartForeheadToCheekRatioMin = 0.95;
 const double _kHeartJawToCheekRatioMax = 0.80;
 const double _kDiamondCheekDominanceMin = 1.08;

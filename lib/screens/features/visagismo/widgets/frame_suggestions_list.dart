@@ -1,5 +1,6 @@
 import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_cubit.dart';
 import 'package:digipad_flutter/screens/features/visagismo/data/visagismo_catalog_repository.dart';
+import 'package:digipad_flutter/screens/features/visagismo/widgets/frame_color_picker_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -46,51 +47,103 @@ class FrameSuggestionsList extends StatelessWidget {
   }
 }
 
-class _FrameCard extends StatelessWidget {
+class _FrameCard extends StatefulWidget {
   const _FrameCard({required this.item, required this.isLocked});
 
   final FrameCatalogItem item;
   final bool isLocked;
 
   @override
+  State<_FrameCard> createState() => _FrameCardState();
+}
+
+class _FrameCardState extends State<_FrameCard> {
+  FrameColorOption? _chosenColor;
+
+  Future<void> _onTap() async {
+    if (widget.isLocked) return;
+    final chosen = await FrameColorPickerSheet.show(
+      context,
+      frameName: widget.item.displayName,
+    );
+    if (chosen != null && mounted) setState(() => _chosenColor = chosen);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final item = widget.item;
+    final isLocked = widget.isLocked;
     return Opacity(
       opacity: isLocked ? 0.45 : 1.0,
-      child: Container(
-        width: 140,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade800,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white24),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _FrameImage(path: item.thumbnailUrl),
-                  if (isLocked)
-                    const Positioned(
-                      top: 6,
-                      right: 6,
-                      child: Icon(Icons.lock, color: Colors.white70, size: 16),
+      child: GestureDetector(
+        onTap: _onTap,
+        child: Container(
+          width: 150,
+          decoration: BoxDecoration(
+            color: const Color(0xFF232329),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: _chosenColor != null
+                  ? Colors.deepPurpleAccent
+                  : Colors.white24,
+              width: _chosenColor != null ? 1.6 : 1,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _FrameImage(path: item.thumbnailUrl),
+                    if (isLocked)
+                      const Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Icon(
+                          Icons.lock,
+                          color: Colors.white70,
+                          size: 16,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                ],
+                    if (_chosenColor != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: _chosenColor!.color,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white38),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Text(
-                item.displayName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

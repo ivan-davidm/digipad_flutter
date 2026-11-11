@@ -35,10 +35,13 @@ class _VisagismoScanningOverlayState extends State<VisagismoScanningOverlay>
     final random = math.Random(42);
     _points = List.generate(
       110,
-      (_) => _ScanPoint(
+      (index) => _ScanPoint(
         dx: random.nextDouble(),
         dy: random.nextDouble(),
         phase: random.nextDouble(),
+        // Alternate azul/celeste so the dot field reads as a two-tone scan
+        // effect rather than a single flat color.
+        color: index.isEven ? Colors.blueAccent : Colors.lightBlueAccent,
       ),
     );
   }
@@ -59,24 +62,31 @@ class _VisagismoScanningOverlayState extends State<VisagismoScanningOverlay>
         // Confined to the same frame the capture screen outlined the face
         // with — clipped so the scan line/dots never spill past it onto the
         // rest of the screen.
-        Center(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(kFaceGuideBorderRadius),
-            child: SizedBox(
-              width: kFaceGuideWidth,
-              height: kFaceGuideHeight,
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) => CustomPaint(
-                  painter: _ScanPainter(
-                    progress: _controller.value,
-                    points: _points,
+        Builder(
+          builder: (context) {
+            final size = faceGuideSize(context);
+            return Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(
+                  faceGuideBorderRadius(context),
+                ),
+                child: SizedBox(
+                  width: size.width,
+                  height: size.height,
+                  child: AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, _) => CustomPaint(
+                      painter: _ScanPainter(
+                        progress: _controller.value,
+                        points: _points,
+                      ),
+                      size: size,
+                    ),
                   ),
-                  size: const Size(kFaceGuideWidth, kFaceGuideHeight),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
         const Positioned(
           bottom: 56,
@@ -100,7 +110,12 @@ class _VisagismoScanningOverlayState extends State<VisagismoScanningOverlay>
 }
 
 class _ScanPoint {
-  const _ScanPoint({required this.dx, required this.dy, required this.phase});
+  const _ScanPoint({
+    required this.dx,
+    required this.dy,
+    required this.phase,
+    required this.color,
+  });
 
   /// Normalized (0..1) position within the canvas.
   final double dx;
@@ -109,6 +124,9 @@ class _ScanPoint {
   /// Offsets this point's twinkle cycle from the others so they don't all
   /// flash in sync.
   final double phase;
+
+  /// Azul/celeste, alternated per point for a two-tone scan effect.
+  final Color color;
 }
 
 class _ScanPainter extends CustomPainter {
@@ -143,7 +161,7 @@ class _ScanPainter extends CustomPainter {
       final t = (progress + point.phase) % 1.0;
       final opacity = math.sin(t * math.pi).clamp(0.0, 1.0);
       if (opacity <= 0.05) continue;
-      dotPaint.color = Colors.greenAccent.withValues(alpha: opacity * 0.9);
+      dotPaint.color = point.color.withValues(alpha: opacity * 0.9);
       canvas.drawCircle(
         Offset(point.dx * size.width, point.dy * size.height),
         1.4,
