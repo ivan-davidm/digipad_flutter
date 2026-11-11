@@ -55,10 +55,14 @@ class SimulationTopBar extends StatelessWidget {
                   child: Row(
                     children: [
                       IconButton(
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.black.withValues(alpha: 0.25),
+                          shape: const CircleBorder(),
+                        ),
                         icon: Icon(
-                          Icons.arrow_back_ios_new,
+                          Icons.arrow_back,
                           color: Colors.white,
-                          size: responsive.iconSize(isTablet ? 32 : 24),
+                          size: responsive.iconSize(isTablet ? 28 : 20),
                         ),
                         onPressed: onBack,
                       ),

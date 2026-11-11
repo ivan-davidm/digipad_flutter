@@ -30,6 +30,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get menuVisagismo => 'Visagismo';
 
   @override
+  String get menuComingSoon => '(PRÓXIMAMENTE)';
+
+  @override
   String get menuVisualHealth => 'Salud Visual';
 
   @override
@@ -856,6 +859,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get simLensNoLens => 'Sin Lente';
+
+  @override
+  String get simLensAspheric => 'Lente Asférico';
 
   @override
   String get saveMeasurement => 'GUARDAR MEDICIÓN';

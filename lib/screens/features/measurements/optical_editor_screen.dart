@@ -54,6 +54,7 @@ class _OpticalEditorScreenState extends State<OpticalEditorScreen>
       WidgetsToImageController();
   late final TextEditingController _calibrationHorizontalController;
   late final TextEditingController _calibrationVerticalController;
+  final TextEditingController _frameWidthController = TextEditingController();
   late final FocusNode _calibrationHorizontalFocusNode;
   late final FocusNode _calibrationVerticalFocusNode;
   bool _isSyncingCalibrationText = false;
@@ -158,6 +159,7 @@ class _OpticalEditorScreenState extends State<OpticalEditorScreen>
     _calibrationVerticalController.dispose();
     _calibrationHorizontalFocusNode.dispose();
     _calibrationVerticalFocusNode.dispose();
+    _frameWidthController.dispose();
     super.dispose();
   }
 
@@ -230,6 +232,8 @@ class _OpticalEditorScreenState extends State<OpticalEditorScreen>
           } else {
             _controller.initialize(widget.detections ?? {}, _imageSize!, mode: widget.mode);
           }
+          final fw = _controller.frameWidthMm;
+          _frameWidthController.text = fw == null ? '' : fw.toStringAsFixed(0);
         });
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1274,26 +1278,80 @@ class _OpticalEditorScreenState extends State<OpticalEditorScreen>
   }
 
   Widget _buildFrameWidthField() {
-    return Container(
-      color: const Color(0xFF1A1A2E),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: TextField(
-        decoration: InputDecoration(
-          labelText: context.l10n.frameWidthField,
-          hintText: context.l10n.frameWidthHint,
-          suffixText: 'mm',
-          isDense: true,
-          labelStyle: const TextStyle(color: Colors.white54),
-          hintStyle: const TextStyle(color: Colors.white24),
-          border: const UnderlineInputBorder(),
+    const accent = Color(0xFFFFC857);
+    return Center(
+      child: FractionallySizedBox(
+        widthFactor: 1 / 3,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: accent.withValues(alpha: 0.6), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: 0.25),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                context.l10n.frameWidthField,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: accent,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.straighten, color: accent, size: 18),
+                  const SizedBox(width: 6),
+                  IntrinsicWidth(
+                    child: TextField(
+                      controller: _frameWidthController,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        hintText: context.l10n.frameWidthHint,
+                        isDense: true,
+                        isCollapsed: true,
+                        border: InputBorder.none,
+                        hintStyle: const TextStyle(color: Colors.white38),
+                      ),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+                      onChanged: (val) {
+                        final normalized = val.replaceAll(',', '.');
+                        _controller.setFrameWidthMm(double.tryParse(normalized));
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'mm',
+                    style: TextStyle(color: accent, fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        style: const TextStyle(color: Colors.white),
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-        onChanged: (val) {
-          final normalized = val.replaceAll(',', '.');
-          _controller.setFrameWidthMm(double.tryParse(normalized));
-        },
       ),
     );
   }

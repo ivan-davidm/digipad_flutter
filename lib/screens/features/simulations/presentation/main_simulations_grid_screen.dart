@@ -61,22 +61,33 @@ class _SimulationsGridView extends StatelessWidget {
           )
         : null;
 
+    // Fixed height for both the toolbar and the expanded area so the bar
+    // never collapses/shrinks while the grid below is scrolled.
+    final fixedHeight = description != null
+        ? (isPhone ? 88.0 : 120.0)
+        : (isPhone ? 68.0 : 100.0);
+
     return SliverAppBar(
       pinned: true,
       elevation: 0,
       backgroundColor: theme.primaryColor,
-      toolbarHeight: isPhone ? 48 : 64,
-      expandedHeight: description != null ? (isPhone ? 88 : 120) : (isPhone ? 68 : 100),
+      toolbarHeight: fixedHeight,
+      collapsedHeight: fixedHeight,
+      expandedHeight: fixedHeight,
       leadingWidth: isPhone ? 52 : 72,
       leading: Center(
         child: SizedBox(
           width: isPhone ? 36 : 48,
-          height: isPhone ? 20 : 24,
+          height: isPhone ? 36 : 48,
           child: IconButton(
             padding: EdgeInsets.zero,
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.black.withValues(alpha: 0.25),
+              shape: const CircleBorder(),
+            ),
             icon: Icon(
-              Icons.arrow_back_ios_new,
-              size: isPhone ? 20 : 28,
+              Icons.arrow_back,
+              size: isPhone ? 18 : 24,
               color: Colors.white,
             ),
             onPressed: () {
@@ -399,28 +410,31 @@ class _ScenarioCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        context.l10n.withoutLens,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                  if (scenario.correctionLenses.any(
+                    (lens) => lens.name == 'sin_lente',
+                  ))
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          context.l10n.withoutLens,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

@@ -137,6 +137,7 @@ flutter:
     - assets/images/visagismo/
     - assets/images/
     - assets/svgs/
+    - assets/videos/
 
 # Flutter Native Splash Configuration
 flutter_native_splash:

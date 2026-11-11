@@ -136,15 +136,38 @@ class _MeasurementHubScreenState extends State<MeasurementHubScreen> {
         maxHeight: 1920,
       );
       if (image == null || !mounted) return;
+
+      // Sin el accesorio de cruces no hay 4 círculos para detectar, pero el
+      // mismo bridge nativo también devuelve los ojos/pupilas detectados —
+      // los pedimos para arrancar el editor con las pupilas ya ubicadas en
+      // vez de con el placeholder fijo a los tercios de la imagen.
+      Map<String, dynamic> detections = const {};
+      if (_channel != null) {
+        setState(() => _isCapturing = true);
+        try {
+          final result =
+              await _channel!.invokeMethod('detectFromImage', {'path': image.path});
+          if (result != null) {
+            final rawMap = Map<String, dynamic>.from(result as Map);
+            detections = {'eyes': _inflateDetections(rawMap['eyes'])};
+          }
+        } catch (e) {
+          debugPrint('Remote measurement eye detection error: $e');
+        }
+        if (mounted) setState(() => _isCapturing = false);
+      }
+
+      if (!mounted) return;
       await Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => OpticalEditorScreen(
           imagePath: image.path,
-          detections: const {},
+          detections: detections,
           mode: MeasurementMode.sinAccesorio,
         ),
       ));
     } catch (e) {
       debugPrint('Remote measurement gallery error: $e');
+      if (mounted) setState(() => _isCapturing = false);
     }
   }
 

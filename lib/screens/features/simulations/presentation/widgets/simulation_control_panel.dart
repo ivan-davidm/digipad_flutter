@@ -392,9 +392,47 @@ class _PhotochromicColorPicker extends StatelessWidget {
         return context.l10n.simColorBrown;
       case 'green':
         return context.l10n.simColorGreen;
+      case 'sunbalance':
+        return context.l10n.simColorSunBalance;
+      case 'yellow':
+        return context.l10n.simColorYellow;
+      case 'aqua':
+        return context.l10n.simColorAqua;
+      case 'blue':
+        return context.l10n.simColorBlue;
+      case 'orange':
+        return context.l10n.simColorOrange;
+      case 'red':
+        return context.l10n.simColorRed;
       case 'sin_lente':
         return context.l10n.simLensNoLens;
+      case 'economic':
+        return context.l10n.simQualityEconomy;
+      case 'standard':
+        return context.l10n.simQualityStandard;
+      case 'good':
+        return context.l10n.simQualityGood;
+      case 'premium':
+        return context.l10n.simQualityPremium;
+      case 'invisible':
+        return context.l10n.simLensInvisibleBifocal;
+      case 'multifocal':
+        return context.l10n.simLensMultifocal;
+      case 'anti_reflective':
+        return context.l10n.simLensWithAR;
+      case 'drivewear':
+        return context.l10n.simCatDriveWear;
+      case 'aspheric':
+        return context.l10n.simLensAspheric;
       default:
+        final diopterMatch = RegExp(r'^standard(_{1,2})(\d+)$').firstMatch(
+          lens.name,
+        );
+        if (diopterMatch != null) {
+          final sign = diopterMatch.group(1) == '__' ? '-' : '+';
+          final value = diopterMatch.group(2);
+          return '$sign$value.00 ${context.l10n.simQualityStandard}';
+        }
         return lens.displayName;
     }
   }

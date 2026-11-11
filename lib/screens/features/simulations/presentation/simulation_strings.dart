@@ -175,6 +175,21 @@ class SimulationStrings {
         return context.l10n.simLensWithAR;
       case 'drivewear':
         return context.l10n.simCatDriveWear;
+      case 'sin_lente':
+        return context.l10n.simLensNoLens;
+      case 'economic':
+      case 'economico':
+        return context.l10n.simQualityEconomy;
+      case 'standard':
+      case 'estandar':
+        return context.l10n.simQualityStandard;
+      case 'good':
+      case 'bueno':
+        return context.l10n.simQualityGood;
+      case 'premium':
+        return context.l10n.simQualityPremium;
+      case 'aspheric':
+        return context.l10n.simLensAspheric;
       case 'gray':
         return context.l10n.simColorGray;
       case 'brown':
@@ -194,6 +209,14 @@ class SimulationStrings {
       case 'red':
         return context.l10n.simColorRed;
       default:
+        final diopterMatch = RegExp(r'^standard(_{1,2})(\d+)$').firstMatch(
+          lens.name,
+        );
+        if (diopterMatch != null) {
+          final sign = diopterMatch.group(1) == '__' ? '-' : '+';
+          final value = diopterMatch.group(2);
+          return '$sign$value.00 ${context.l10n.simQualityStandard}';
+        }
         return lens.displayName;
     }
   }

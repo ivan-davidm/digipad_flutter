@@ -23,6 +23,10 @@ class VisagismoCaptureScreen extends StatefulWidget {
 class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
     with WidgetsBindingObserver {
   CameraController? _controller;
+  List<CameraDescription> _cameras = [];
+  CameraDescription? _activeCamera;
+  FlashMode _flashMode = FlashMode.off;
+  bool _flashSupported = true;
   bool _isInitializing = true;
   bool _isCapturing = false;
   String? _error;
@@ -41,25 +45,21 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
     });
     try {
       final cameras = await availableCameras();
+      if (cameras.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _error = 'No se detectó ninguna cámara en este dispositivo.';
+            _isInitializing = false;
+          });
+        }
+        return;
+      }
+      _cameras = cameras;
       final front = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
-      final controller = CameraController(
-        front,
-        ResolutionPreset.high,
-        enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.jpeg,
-      );
-      await controller.initialize();
-      if (!mounted) {
-        await controller.dispose();
-        return;
-      }
-      setState(() {
-        _controller = controller;
-        _isInitializing = false;
-      });
+      await _startController(front);
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -67,6 +67,79 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
           _isInitializing = false;
         });
       }
+    }
+  }
+
+  Future<void> _startController(CameraDescription camera) async {
+    final previous = _controller;
+    _controller = null;
+    if (previous != null) await previous.dispose();
+    final controller = CameraController(
+      camera,
+      ResolutionPreset.high,
+      enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.jpeg,
+    );
+    try {
+      await controller.initialize();
+      // Front-facing lenses rarely have a real flash unit; probe instead of
+      // assuming, so a device that proves otherwise still gets the button.
+      bool flashSupported = camera.lensDirection != CameraLensDirection.front;
+      if (flashSupported) {
+        try {
+          await controller.setFlashMode(_flashMode);
+        } catch (_) {
+          flashSupported = false;
+        }
+      }
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _controller = controller;
+        _activeCamera = camera;
+        _flashSupported = flashSupported;
+        _isInitializing = false;
+        _error = null;
+      });
+    } catch (_) {
+      await controller.dispose();
+      if (mounted) {
+        setState(() {
+          _error = 'No se pudo iniciar la cámara.';
+          _isInitializing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _switchCamera(CameraDescription camera) async {
+    if (_isCapturing || camera == _activeCamera) return;
+    setState(() => _isInitializing = true);
+    await _startController(camera);
+  }
+
+  /// Simple toggle when there are only front/back lenses; cycles to "the
+  /// other" one relative to whichever is active.
+  void _toggleFrontBack() {
+    final other = _cameras.firstWhere(
+      (c) => c.lensDirection != _activeCamera?.lensDirection,
+      orElse: () => _cameras.first,
+    );
+    _switchCamera(other);
+  }
+
+  Future<void> _cycleFlash() async {
+    final controller = _controller;
+    if (controller == null || !_flashSupported) return;
+    const order = [FlashMode.off, FlashMode.auto, FlashMode.torch];
+    final next = order[(order.indexOf(_flashMode) + 1) % order.length];
+    try {
+      await controller.setFlashMode(next);
+      if (mounted) setState(() => _flashMode = next);
+    } catch (_) {
+      if (mounted) setState(() => _flashSupported = false);
     }
   }
 
@@ -117,10 +190,45 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
 
   @override
   Widget build(BuildContext context) {
+    final hasMultipleCameras = _cameras.length > 1;
+    final hasExtraCameras = _cameras.length > 2;
     return Stack(
       children: [
         Positioned.fill(child: _buildPreview()),
         if (_controller != null) const _FaceGuideOverlay(),
+        if (_controller != null)
+          Positioned(
+            top: 16,
+            right: 16,
+            child: SafeArea(
+              child: Row(
+                children: [
+                  if (_flashSupported)
+                    _CameraToolButton(
+                      icon: switch (_flashMode) {
+                        FlashMode.off => Icons.flash_off,
+                        FlashMode.auto => Icons.flash_auto,
+                        _ => Icons.flash_on,
+                      },
+                      tooltip: 'Flash',
+                      onTap: _cycleFlash,
+                    ),
+                  if (hasExtraCameras)
+                    _CameraToolButton(
+                      icon: Icons.videocam_outlined,
+                      tooltip: 'Elegir cámara',
+                      onTap: () => _showCameraPicker(context),
+                    )
+                  else if (hasMultipleCameras)
+                    _CameraToolButton(
+                      icon: Icons.cameraswitch_outlined,
+                      tooltip: 'Cambiar cámara',
+                      onTap: _toggleFrontBack,
+                    ),
+                ],
+              ),
+            ),
+          ),
         if (_controller != null)
           Positioned(
             bottom: 32,
@@ -134,6 +242,46 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
             ),
           ),
       ],
+    );
+  }
+
+  String _cameraLabel(CameraDescription camera) {
+    switch (camera.lensDirection) {
+      case CameraLensDirection.front:
+        return 'Cámara frontal';
+      case CameraLensDirection.back:
+        return 'Cámara trasera';
+      case CameraLensDirection.external:
+        return 'Cámara externa (USB)';
+    }
+  }
+
+  void _showCameraPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black87,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _cameras.map((camera) {
+            final isActive = camera == _activeCamera;
+            return ListTile(
+              leading: Icon(
+                isActive ? Icons.radio_button_checked : Icons.radio_button_off,
+                color: isActive ? Colors.deepPurpleAccent : Colors.white54,
+              ),
+              title: Text(
+                _cameraLabel(camera),
+                style: const TextStyle(color: Colors.white),
+              ),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _switchCamera(camera);
+              },
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 
@@ -209,6 +357,41 @@ class _FaceGuideOverlay extends StatelessWidget {
             shape: BoxShape.rectangle,
             borderRadius: BorderRadius.circular(kFaceGuideBorderRadius),
             border: Border.all(color: Colors.white38, width: 2),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CameraToolButton extends StatelessWidget {
+  const _CameraToolButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: Tooltip(
+        message: tooltip,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black45,
+            ),
+            child: Icon(icon, color: Colors.white),
           ),
         ),
       ),

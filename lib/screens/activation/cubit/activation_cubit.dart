@@ -14,7 +14,7 @@ class ActivationCubit extends Cubit<ActivationState> {
 
   // ─── DEV FLAGS ───────────────────────────────────────────────────────────
   // Set to true to skip all activation checks (local testing only).
-  static const bool kBypassActivation = true;
+  static const bool kBypassActivation = false;
   // ─────────────────────────────────────────────────────────────────────────
 
   ActivationCubit(this._service) : super(const ActivationState());

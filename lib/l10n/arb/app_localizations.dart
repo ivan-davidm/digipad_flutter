@@ -142,6 +142,12 @@ abstract class AppLocalizations {
   /// **'Visagism'**
   String get menuVisagismo;
 
+  /// No description provided for @menuComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'(COMING SOON)'**
+  String get menuComingSoon;
+
   /// No description provided for @menuVisualHealth.
   ///
   /// In en, this message translates to:
@@ -1671,6 +1677,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No Lens'**
   String get simLensNoLens;
+
+  /// No description provided for @simLensAspheric.
+  ///
+  /// In en, this message translates to:
+  /// **'Aspheric Lens'**
+  String get simLensAspheric;
 
   /// No description provided for @saveMeasurement.
   ///

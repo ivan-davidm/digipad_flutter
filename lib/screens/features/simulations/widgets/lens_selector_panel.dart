@@ -222,7 +222,17 @@ class _LensCard extends StatelessWidget {
         return context.l10n.simLensProgressive;
       case 'sin_lente':
         return context.l10n.simLensNoLens;
+      case 'aspheric':
+        return context.l10n.simLensAspheric;
       default:
+        final diopterMatch = RegExp(r'^standard(_{1,2})(\d+)$').firstMatch(
+          lens.name,
+        );
+        if (diopterMatch != null) {
+          final sign = diopterMatch.group(1) == '__' ? '-' : '+';
+          final value = diopterMatch.group(2);
+          return '$sign$value.00 ${context.l10n.simQualityStandard}';
+        }
         return lens.displayName;
     }
   }

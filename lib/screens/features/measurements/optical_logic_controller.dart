@@ -172,6 +172,10 @@ class OpticalController extends ChangeNotifier {
             (p2.dy + yOff).clamp(0, imageSize.height)),
         DetectionType.lensLeftBottom, "L_BR");
       _initialDiameterSynced = false;
+      // Sin accesorio de referencia no hay nada que mida el ancho real del
+      // armazón: arrancamos con un ancho típico (130mm) en vez de 0/null para
+      // que el DI y el resto de las fórmulas no arranquen en cero.
+      frameWidthMm ??= 130.0;
       calculateFormulas();
       return;
     }
