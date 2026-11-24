@@ -957,6 +957,36 @@ class AppLocalizationsEs extends AppLocalizations {
   String get cleanView => 'Vista limpia';
 
   @override
+  String get linkLenses => 'Vincular lentes (espejar ajustes)';
+
+  @override
+  String get homeBgTitle => 'Fondo';
+
+  @override
+  String get homeBgModeVideo1Loop => 'Video 1 · movimiento permanente';
+
+  @override
+  String get homeBgModeVideo3Loop => 'Video 3 · movimiento permanente';
+
+  @override
+  String get homeBgModeVideo1Periodic =>
+      'Video 1 · cada tanto, y vuelve a la imagen';
+
+  @override
+  String get homeBgModeVideo3Periodic =>
+      'Video 3 · cada tanto, y vuelve a la imagen';
+
+  @override
+  String get homeBgModeStill => 'Solo imagen';
+
+  @override
+  String get homeBgInterval => 'Repetir cada';
+
+  @override
+  String get homeBgGestures =>
+      'Un toque: pausa / reproduce · Doble toque: cambia de video · Mantener: solo imagen';
+
+  @override
   String get simAdaptLabel => 'Adaptación';
 
   @override

@@ -1858,6 +1858,60 @@ abstract class AppLocalizations {
   /// **'Clean view'**
   String get cleanView;
 
+  /// No description provided for @linkLenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Link lenses (mirror adjustments)'**
+  String get linkLenses;
+
+  /// No description provided for @homeBgTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Background'**
+  String get homeBgTitle;
+
+  /// No description provided for @homeBgModeVideo1Loop.
+  ///
+  /// In en, this message translates to:
+  /// **'Video 1 · continuous motion'**
+  String get homeBgModeVideo1Loop;
+
+  /// No description provided for @homeBgModeVideo3Loop.
+  ///
+  /// In en, this message translates to:
+  /// **'Video 3 · continuous motion'**
+  String get homeBgModeVideo3Loop;
+
+  /// No description provided for @homeBgModeVideo1Periodic.
+  ///
+  /// In en, this message translates to:
+  /// **'Video 1 · now and then, then back to the image'**
+  String get homeBgModeVideo1Periodic;
+
+  /// No description provided for @homeBgModeVideo3Periodic.
+  ///
+  /// In en, this message translates to:
+  /// **'Video 3 · now and then, then back to the image'**
+  String get homeBgModeVideo3Periodic;
+
+  /// No description provided for @homeBgModeStill.
+  ///
+  /// In en, this message translates to:
+  /// **'Image only'**
+  String get homeBgModeStill;
+
+  /// No description provided for @homeBgInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat every'**
+  String get homeBgInterval;
+
+  /// No description provided for @homeBgGestures.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap: pause / play · Double tap: next video · Long press: image only'**
+  String get homeBgGestures;
+
   /// No description provided for @simAdaptLabel.
   ///
   /// In en, this message translates to:

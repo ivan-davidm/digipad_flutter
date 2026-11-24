@@ -949,6 +949,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cleanView => 'Clean view';
 
   @override
+  String get linkLenses => 'Link lenses (mirror adjustments)';
+
+  @override
+  String get homeBgTitle => 'Background';
+
+  @override
+  String get homeBgModeVideo1Loop => 'Video 1 · continuous motion';
+
+  @override
+  String get homeBgModeVideo3Loop => 'Video 3 · continuous motion';
+
+  @override
+  String get homeBgModeVideo1Periodic =>
+      'Video 1 · now and then, then back to the image';
+
+  @override
+  String get homeBgModeVideo3Periodic =>
+      'Video 3 · now and then, then back to the image';
+
+  @override
+  String get homeBgModeStill => 'Image only';
+
+  @override
+  String get homeBgInterval => 'Repeat every';
+
+  @override
+  String get homeBgGestures =>
+      'Tap: pause / play · Double tap: next video · Long press: image only';
+
+  @override
   String get simAdaptLabel => 'Adaptation';
 
   @override
