@@ -7,7 +7,6 @@ import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_state
 import 'package:digipad_flutter/screens/features/visagismo/data/visagismo_availability.dart';
 import 'package:digipad_flutter/screens/features/visagismo/data/visagismo_catalog_repository.dart';
 import 'package:digipad_flutter/screens/features/visagismo/logic/face_measurements_from_mlkit.dart';
-import 'package:digipad_flutter/screens/features/visagismo/logic/face_shape_classifier.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -42,25 +41,39 @@ class VisagismoCubit extends Cubit<VisagismoState> {
       return;
     }
 
-    bool hasFrontCamera = false;
+    var hasFrontCamera = false;
+    var hasBackCamera = false;
     try {
       final cameras = await availableCameras();
       hasFrontCamera = cameras.any(
         (c) => c.lensDirection == CameraLensDirection.front,
       );
+      hasBackCamera = cameras.any(
+        (c) => c.lensDirection == CameraLensDirection.back,
+      );
+      // Some devices report only "external" cameras: still usable.
+      if (!hasFrontCamera && !hasBackCamera && cameras.isNotEmpty) {
+        hasBackCamera = true;
+      }
     } catch (_) {
       hasFrontCamera = false;
+      hasBackCamera = false;
     }
 
-    final availability = VisagismoAvailability(hasFrontCamera: hasFrontCamera);
+    final availability = VisagismoAvailability(
+      hasFrontCamera: hasFrontCamera,
+      hasBackCamera: hasBackCamera,
+    );
     emit(
       state.copyWith(
         availability: availability,
         cameraPermissionDenied: false,
-        step: hasFrontCamera ? VisagismoStep.capture : VisagismoStep.unavailable,
+        step: availability.hasAnyCamera
+            ? VisagismoStep.capture
+            : VisagismoStep.unavailable,
       ),
     );
-    if (hasFrontCamera) {
+    if (availability.hasAnyCamera) {
       unawaited(_loadCatalog());
     }
   }
@@ -87,39 +100,40 @@ class VisagismoCubit extends Cubit<VisagismoState> {
         step: VisagismoStep.scanning,
         capturedImagePath: jpegPath,
         lastClassification: null,
+        lastAnalysis: null,
       ),
     );
 
     final minDelay = Future<void>.delayed(_kMinScanDuration);
-    final classification = await _classify(jpegPath);
+    final analysis = await _analyze(jpegPath);
     await minDelay;
 
     if (isClosed) return;
     emit(
       state.copyWith(
         step: VisagismoStep.result,
-        lastClassification: classification,
+        lastClassification: analysis.shape,
+        lastAnalysis: analysis,
       ),
     );
   }
 
-  Future<FaceShapeResult?> _classify(String jpegPath) async {
+  Future<FaceAnalysis> _analyze(String jpegPath) async {
     try {
       _faceDetector ??= FaceDetector(
         options: FaceDetectorOptions(
           enableContours: true,
+          // Eye landmarks level the contour when the head is tilted sideways.
+          enableLandmarks: true,
           performanceMode: FaceDetectorMode.accurate,
         ),
       );
       final faces = await _faceDetector!.processImage(
         InputImage.fromFilePath(jpegPath),
       );
-      if (faces.isEmpty) return null;
-      final measurements = faceMeasurementsFromFace(faces.first);
-      if (measurements == null) return null;
-      return classifyFaceShape(measurements);
+      return analyzeFaces(faces);
     } catch (_) {
-      return null;
+      return const FaceAnalysis(issue: FaceCaptureIssue.noFace);
     }
   }
 
@@ -135,6 +149,7 @@ class VisagismoCubit extends Cubit<VisagismoState> {
         step: VisagismoStep.capture,
         capturedImagePath: null,
         lastClassification: null,
+        lastAnalysis: null,
       ),
     );
   }

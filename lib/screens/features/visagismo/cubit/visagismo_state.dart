@@ -1,5 +1,6 @@
 import 'package:digipad_flutter/screens/features/visagismo/data/visagismo_availability.dart';
 import 'package:digipad_flutter/screens/features/visagismo/data/visagismo_catalog_repository.dart';
+import 'package:digipad_flutter/screens/features/visagismo/logic/face_measurements_from_mlkit.dart';
 import 'package:digipad_flutter/screens/features/visagismo/logic/face_shape_classifier.dart';
 
 enum VisagismoStep { checkingAvailability, unavailable, capture, scanning, result }
@@ -10,6 +11,9 @@ class VisagismoState {
   final bool cameraPermissionDenied;
   final String? capturedImagePath;
   final FaceShapeResult? lastClassification;
+
+  /// Full result of the last photo (measurements, head pose, why it failed).
+  final FaceAnalysis? lastAnalysis;
   final List<FrameCatalogItem> catalog;
 
   const VisagismoState({
@@ -18,6 +22,7 @@ class VisagismoState {
     this.cameraPermissionDenied = false,
     this.capturedImagePath,
     this.lastClassification,
+    this.lastAnalysis,
     this.catalog = const [],
   });
 
@@ -27,6 +32,7 @@ class VisagismoState {
     bool? cameraPermissionDenied,
     Object? capturedImagePath = _sentinel,
     Object? lastClassification = _sentinel,
+    Object? lastAnalysis = _sentinel,
     List<FrameCatalogItem>? catalog,
   }) {
     return VisagismoState(
@@ -42,6 +48,9 @@ class VisagismoState {
       lastClassification: lastClassification == _sentinel
           ? this.lastClassification
           : lastClassification as FaceShapeResult?,
+      lastAnalysis: lastAnalysis == _sentinel
+          ? this.lastAnalysis
+          : lastAnalysis as FaceAnalysis?,
       catalog: catalog ?? this.catalog,
     );
   }
