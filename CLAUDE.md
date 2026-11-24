@@ -7,7 +7,7 @@
 
 A professional optical measurement and lens-simulation app for ópticas (optical shops), in Flutter for **Android and iOS** (portrait only). It is typically run on a **Tótem**: a kiosk device (tablet / Android TV-class box) in the shop. Operators send it photos from their phones using the companion app, and the shop measures and demonstrates lenses with them.
 
-- Version `4.0.0+28` · Dart `>=3.8.1 <4.0.0` · Android `applicationId` `ar.com.digipad`, `minSdk 26` · iOS bundle id `ar.com.digipad`
+- Version `4.0.1+29` · Dart `>=3.8.1 <4.0.0` · Android `applicationId` `ar.com.digipad`, `minSdk 26` · iOS bundle id `ar.com.digipad`
 - Languages: **es / en / pt** (all three ARB files have the same ~305 keys)
 - State management: **BLoC/Cubit** (`flutter_bloc`); `provider` only inside `optical_editor_screen.dart`
 - Local storage: **Sembast** (`gallery.db`, `measurements.db`) + SharedPreferences. Cloud: Firebase Firestore (activation, visagismo catalog)
@@ -20,8 +20,9 @@ A professional optical measurement and lens-simulation app for ópticas (optical
 4. **The pantoscopic angle formula exists in three places** (this repo: `measurement_capture_screen.dart`, `vm_camera_screen.dart`; companion repo: `photo_capture_screen.dart`). Change one → change all, and check the companion repo.
 5. **Photo sync protocol is a contract between two repos.** The receiver lives here; the sender is mostly in `digipad_totem`. See "Photo Sync".
 6. **Generated l10n files are committed** (`lib/l10n/arb/app_localizations*.dart`). After editing an ARB file, regenerate and commit them.
-7. **Some modules are hidden on purpose** (product decisions recorded as dated comments in code). See "Hidden / flagged-off features". They are not broken.
-8. Orphans: `lib/home_view.dart` and `lib/splash_screen.dart` are not referenced anywhere. `script.py` and `convert_images.sh` are stale one-off scripts with machine-specific paths (`q:\REPO\digipad\…`, `/Volumes/KINGSTON/…`).
+7. **ML Kit needs an R8 keep rule in release builds.** `android/app/proguard-rules.pro` keeps `ComponentRegistrar` implementations (`-keep class * implements com.google.firebase.components.ComponentRegistrar { <init>(); }`). Without it R8 strips their constructors, ML Kit never initialises and every face detection fails with a NullPointerException — debug builds work, release doesn't. The visagismo reports detector failures as `FaceCaptureIssue.detectorError` (never as "no face"). If you add another ML Kit plugin, check a release build.
+8. **Some modules are hidden on purpose** (product decisions recorded as dated comments in code). See "Hidden / flagged-off features". They are not broken.
+9. Orphans: `lib/home_view.dart` and `lib/splash_screen.dart` are not referenced anywhere. `script.py` and `convert_images.sh` are stale one-off scripts with machine-specific paths (`q:\REPO\digipad\…`, `/Volumes/KINGSTON/…`).
 
 ## App flow
 
@@ -32,7 +33,7 @@ main.dart
          └─ ActivationWrapper ── approved ──► HomeScreen
 ```
 
-`HomeScreen` (`lib/screens/home_screen.dart`) is an animated background (see "Home background" below) with a left-aligned column of **7 module cards** and the logo at the bottom-right:
+`HomeScreen` (`lib/screens/home_screen.dart`) is an animated background (see "Home background" below) with **7 module cards in an arch** (`left` 75→30→75, evenly spaced `top`, pushed below the logo by `_logoReservedHeight`) and the DTCP logo (`assets/images/logo_dtcp.png`, on a white oval backdrop) at the top. The arch was accidentally replaced by a straight column once (2026-11-24) — keep it:
 
 | Key | Screen | Notes |
 |-----|--------|-------|
@@ -50,10 +51,10 @@ main.dart
 
 `HomeBackgroundController` (state machine, unit-tested with a fake player) + `HomeBackground` widget (wallpaper underneath, video fading in on top) + a settings sheet. The still image is always `assets/images/background.webp` (the original wallpaper); when a video ends it fades back to it instead of freezing on the last frame.
 
-- **Videos** (`kBackgroundVideos`): `home_background.mp4` (V1, **cut at 17 s in code** — the file is ~20 s), `home_background_2.mp4` (V2, 10 s), `home_background_3.mp4` (V3, 20 s). All 1080×1920. Only one decoder is alive at a time.
+- **Videos** (`kBackgroundVideos`): `home_background.mp4` (V1, **cut at 17 s in code** — the file is ~20 s), `home_background_2.mp4` (V2, 10 s), `home_background_3.mp4` (V3, 20 s). All 1080×1920 H.264. Only one decoder is alive at a time: `_play` pauses and disposes the current player *before* initialising the next one (Tótem-class devices may have a single 1080p hardware decoder; opening V2 while V1 was alive broke double tap). Covered by a test.
 - **Gestures on empty background**: tap = pause/play (on the wallpaper it plays the current video) · double tap = next video V1→V2→V3→V1 · long press = wallpaper only (long press again resumes).
 - **Modes** (`HomeBackgroundMode`, persisted in SharedPreferences `home_bg_mode`): V1 loop (default, as before), V3 loop, V1 periodic, V3 periodic, image only. Periodic = wallpaper, plays the video once every N min (`home_bg_interval_min`: 1/2/5/10, default 2) and returns to the wallpaper. Picking a periodic mode plays once immediately as a preview.
-- **Settings sheet**: **long press on the logo** (bottom-right) — deliberately hidden so customers in the shop don't change it. Strings: `homeBg*` keys in the ARB files.
+- **Settings sheet**: **long press on the logo** (top) — deliberately hidden so customers in the shop don't change it. Strings: `homeBg*` keys in the ARB files.
 - The video pauses when the app goes to the background. It does **not** yet pause while a module screen is open on top of the home.
 - Double-tap-chosen video is sticky for the session only; after a restart the persisted mode decides again.
 
