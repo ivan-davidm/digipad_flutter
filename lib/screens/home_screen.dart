@@ -17,7 +17,8 @@ import 'package:digipad_flutter/screens/features/visagismo/presentation/visagism
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:video_player/video_player.dart';
+import 'package:digipad_flutter/screens/home/home_background.dart';
+import 'package:digipad_flutter/screens/home/home_background_controller.dart';
 import 'package:digipad_flutter/l10n/l10n.dart';
 import 'package:digipad_flutter/main.dart';
 import 'package:digipad_flutter/digi_locale.dart';
@@ -30,13 +31,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   // ── Session-scoped TOTEM cubit ──────────────────────────────────────────────
   late final TotemCubit _hostCubit;
   late final GalleryStorage _galleryStorage;
 
-  // ── Looping background video ────────────────────────────────────────────────
-  late final VideoPlayerController _backgroundVideoController;
+  // ── Background: wallpaper + videos (tap / double tap / long press) ──────────
+  late final HomeBackgroundController _background;
 
   // ── Entrance animation ──────────────────────────────────────────────────────
   late final AnimationController _entranceController;
@@ -54,19 +55,9 @@ class _HomeScreenState extends State<HomeScreen>
     _galleryStorage = GalleryStorage();
     _hostCubit = TotemCubit(storage: _galleryStorage);
 
-    _backgroundVideoController =
-        VideoPlayerController.asset('assets/videos/home_background.mp4')
-          ..setLooping(true)
-          ..setVolume(0)
-          ..initialize()
-              .then((_) {
-                if (mounted) setState(() {});
-                _backgroundVideoController.play();
-              })
-              .catchError((_) {
-                // Some low-end devices lack a usable hardware decoder; fail
-                // silently and keep the plain black fallback background.
-              });
+    WidgetsBinding.instance.addObserver(this);
+    _background = HomeBackgroundController();
+    _background.init();
 
     _entranceController = AnimationController(
       vsync: this,
@@ -79,11 +70,22 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _entranceController.dispose();
     _hostCubit.close();
     _sharedImageIntentHandler.dispose();
-    _backgroundVideoController.dispose();
+    _background.dispose();
     super.dispose();
+  }
+
+  // Don't keep decoding video while the app is in the background.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _background.onAppPaused();
+    } else if (state == AppLifecycleState.resumed) {
+      _background.onAppResumed();
+    }
   }
 
   // ── Module definitions (order = visual top-to-bottom) ──────────────────────
@@ -157,20 +159,26 @@ class _HomeScreenState extends State<HomeScreen>
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // ── Full-screen looping background video ──────────────────────────
-            _buildBackgroundVideo(),
+            // ── Wallpaper + background video (tap / double tap / long press) ──
+            HomeBackground(controller: _background),
 
             SafeArea(
               child: Stack(
                 children: [
-                  // ── Logo, above the module column ─────────────────────────────
+                  // ── Logo, bottom-right. Long press opens the background
+                  //    settings (kept hidden so shop customers don't change it).
                   Positioned(
-                    top: MediaQuery.of(context).size.height * 0.03,
-                    left: 64,
-                    child: Image.asset(
-                      'assets/images/logo1.png',
-                      height: MediaQuery.of(context).size.height * 0.175,
-                      fit: BoxFit.contain,
+                    bottom: 24,
+                    right: 24,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onLongPress: () =>
+                          showHomeBackgroundSheet(context, _background),
+                      child: Image.asset(
+                        'assets/images/logo1.png',
+                        height: MediaQuery.of(context).size.height * 0.175,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
 
@@ -269,27 +277,6 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // ── Full-bleed background video (cover, no letterboxing, any screen) ───────
-  Widget _buildBackgroundVideo() {
-    if (!_backgroundVideoController.value.isInitialized) {
-      return const ColoredBox(color: Colors.black);
-    }
-    final videoSize = _backgroundVideoController.value.size;
-    return ColoredBox(
-      color: Colors.black,
-      child: ClipRect(
-        child: FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: videoSize.width,
-            height: videoSize.height,
-            child: VideoPlayer(_backgroundVideoController),
-          ),
         ),
       ),
     );
