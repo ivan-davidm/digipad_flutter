@@ -33,7 +33,7 @@ main.dart
          └─ ActivationWrapper ── approved ──► HomeScreen
 ```
 
-`HomeScreen` (`lib/screens/home_screen.dart`) is an animated background (see "Home background" below) with **7 module cards in an arch** (`left` 75→30→75, evenly spaced `top`, pushed below the logo by `_logoReservedHeight`) and the DTCP logo (`assets/images/logo_dtcp.png`, on a white oval backdrop) at the top. The arch was accidentally replaced by a straight column once (2026-11-24) — keep it:
+`HomeScreen` (`lib/screens/home_screen.dart`) is an animated background (see "Home background" below) with **7 module cards in an arch** (`left` 75→30→75, evenly spaced `top`, starting just below the top bar, `_kMenuTopOffset`) and the DTCP logo (`assets/images/logo_dtcp.png`, on a white oval backdrop) at the bottom-right. The arch was accidentally replaced by a straight column once (2026-11-24) — keep it:
 
 | Key | Screen | Notes |
 |-----|--------|-------|
@@ -53,8 +53,8 @@ main.dart
 
 - **Videos** (`kBackgroundVideos`): `home_background.mp4` (V1, **cut at 17 s in code** — the file is ~20 s), `home_background_2.mp4` (V2, 10 s), `home_background_3.mp4` (V3, 20 s). All 1080×1920 H.264. Only one decoder is alive at a time: `_play` pauses and disposes the current player *before* initialising the next one (Tótem-class devices may have a single 1080p hardware decoder; opening V2 while V1 was alive broke double tap). Covered by a test.
 - **Gestures on empty background**: tap = pause/play (on the wallpaper it plays the current video) · double tap = next video V1→V2→V3→V1 · long press = wallpaper only (long press again resumes).
-- **Modes** (`HomeBackgroundMode`, persisted in SharedPreferences `home_bg_mode`): V1 loop (default, as before), V3 loop, V1 periodic, V3 periodic, image only. Periodic = wallpaper, plays the video once every N min (`home_bg_interval_min`: 1/2/5/10, default 2) and returns to the wallpaper. Picking a periodic mode plays once immediately as a preview.
-- **Settings sheet**: **long press on the logo** (top) — deliberately hidden so customers in the shop don't change it. Strings: `homeBg*` keys in the ARB files.
+- **Modes** (`HomeBackgroundMode`, persisted in SharedPreferences `home_bg_mode`): loop of V1 (default), V2 or V3; periodic V1, V2 or V3; image only. Periodic = wallpaper, plays the video once every N min (`home_bg_interval_min`: 1/2/5/10, default 2) and returns to the wallpaper. Picking a periodic mode plays once immediately as a preview.
+- **Settings sheet**: **long press on the logo** (bottom-right) — deliberately hidden so customers in the shop don't change it. Strings: `homeBg*` keys in the ARB files.
 - The video pauses when the app goes to the background. It does **not** yet pause while a module screen is open on top of the home.
 - Double-tap-chosen video is sticky for the session only; after a restart the persisted mode decides again.
 
