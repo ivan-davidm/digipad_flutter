@@ -13,8 +13,13 @@ class ActivationCubit extends Cubit<ActivationState> {
   static const int _accessUpdateThrottleMinutes = 5;
 
   // ─── DEV FLAGS ───────────────────────────────────────────────────────────
-  // Set to true to skip all activation checks (local testing only).
-  static const bool kBypassActivation = true;
+  // Skips every activation check (local testing only). OFF by default, so a
+  // release build can never ship without the activation gate. To test without
+  // activating, opt in explicitly at run time:
+  //   flutter run --dart-define=BYPASS_ACTIVATION=true
+  static const bool kBypassActivation = bool.fromEnvironment(
+    'BYPASS_ACTIVATION',
+  );
   // ─────────────────────────────────────────────────────────────────────────
 
   ActivationCubit(this._service) : super(const ActivationState());
