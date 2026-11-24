@@ -343,11 +343,13 @@ class _OpticalEditorScreenState extends State<OpticalEditorScreen>
 
     if (angle.abs() > 0.01) {
       setState(() => _imageRotation = -angle);
+      _controller.viewRotation = _imageRotation;
       debugPrint(
         "🔄 Auto-rotation: ${(_imageRotation * 180 / math.pi).toStringAsFixed(1)}° applied",
       );
     } else {
       setState(() => _imageRotation = 0.0);
+      _controller.viewRotation = 0.0;
     }
   }
 
@@ -916,6 +918,17 @@ class _OpticalEditorScreenState extends State<OpticalEditorScreen>
                   style: TextStyle(color: Colors.white, fontSize: 12 * ts),
                 ),
                 const Spacer(),
+                IconButton(
+                  icon: Icon(
+                    ctrl.linkLenses ? Icons.link : Icons.link_off,
+                    color: ctrl.linkLenses ? Colors.cyanAccent : Colors.white38,
+                    size: 20,
+                  ),
+                  tooltip: context.l10n.linkLenses,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                  onPressed: () => ctrl.toggleLinkLenses(!ctrl.linkLenses),
+                ),
                 IconButton(
                   icon: Icon(
                     ctrl.showChips ? Icons.straighten : Icons.straighten_outlined,

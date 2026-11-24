@@ -71,6 +71,16 @@ class OpticalController extends ChangeNotifier {
 
   DetectionPoint? selectedPoint;
 
+  /// When true, adjusting a right-lens L corner mirrors the movement onto the
+  /// left lens (see [_mirrorToLeftLens]). Persisted across sessions.
+  bool linkLenses = true;
+
+  /// Rotation (radians) the editor applies to the image on screen — the same
+  /// value the painter receives as `rotation`. The mirror works along the
+  /// *screen* horizontal/vertical axes, which only coincide with image x/y
+  /// when this is 0. The editor keeps it in sync after auto-rotation.
+  double viewRotation = 0.0;
+
   OpticalController() {
     _loadCalibration();
   }
@@ -82,6 +92,7 @@ class OpticalController extends ChangeNotifier {
           prefs.getDouble('ajusteHorizontal')?.clamp(0.9, 1.25) ?? 1.0;
       ajusteVertical =
           prefs.getDouble('ajusteVertical')?.clamp(0.9, 1.25) ?? 1.0;
+      linkLenses = prefs.getBool('linkLenses') ?? true;
 
       // Si la imagen ya terminó de cargar sus puntos, actualizamos las fórmulas
       if (points.isNotEmpty) {
@@ -468,7 +479,7 @@ class OpticalController extends ChangeNotifier {
     if (selectedPoint != null) {
       final actualDelta = delta / scale;
       selectedPoint!.position += actualDelta;
-      _mirrorToLeftLensIfNeeded(selectedPoint!.type, actualDelta.dx);
+      _mirrorToLeftLens(selectedPoint!, actualDelta);
       calculateFormulas();
       notifyListeners();
     }
@@ -476,33 +487,84 @@ class OpticalController extends ChangeNotifier {
 
   void nudgeSelectedPoint(double dx, double dy) {
     if (selectedPoint != null) {
-      selectedPoint!.position += Offset(dx, dy);
-      _mirrorToLeftLensIfNeeded(selectedPoint!.type, dx);
+      final delta = Offset(dx, dy);
+      selectedPoint!.position += delta;
+      _mirrorToLeftLens(selectedPoint!, delta);
       calculateFormulas();
       notifyListeners();
     }
   }
 
-  /// Dragging a right-lens corner replicates the horizontal movement
-  /// (mirrored) onto the matching left-lens corner, since the two frames
-  /// are symmetric across the bridge, and snaps that mirrored corner to the
-  /// same height as the dragged one. Left-lens corners stay independent and
-  /// never move the right side.
-  void _mirrorToLeftLensIfNeeded(DetectionType type, double dx) {
-    DetectionType? mirrorType;
-    if (type == DetectionType.lensRightTop) {
-      mirrorType = DetectionType.lensLeftTop;
-    } else if (type == DetectionType.lensRightBottom) {
-      mirrorType = DetectionType.lensLeftBottom;
-    }
-    if (mirrorType == null) return;
+  void toggleLinkLenses(bool val) {
+    linkLenses = val;
+    notifyListeners();
+    SharedPreferences.getInstance()
+        .then((prefs) => prefs.setBool('linkLenses', val))
+        .catchError((Object e) {
+      debugPrint('Error guardando linkLenses: $e');
+      return false;
+    });
+  }
 
-    final draggedY = selectedPoint!.position.dy;
-    for (final p in points) {
-      if (p.type == mirrorType) {
-        p.position = Offset(p.position.dx - dx, draggedY);
+  /// Dragging a right-lens corner (the patient's right = the LEFT side of the
+  /// image) replicates the movement, mirrored, onto the left lens, since the
+  /// two lenses are symmetric across the bridge. Left-lens corners stay
+  /// independent and never move the right side. Does nothing when
+  /// [linkLenses] is off.
+  ///
+  /// Each L is the top-left or bottom-right corner of its lens rectangle, so
+  /// the left lens' corners sit on the *opposite* sides of the right lens':
+  ///
+  ///   R_TL (outer, top)    → height of L_TL (top edge)    · x of L_BR (outer edge)
+  ///   R_BR (nasal, bottom) → height of L_BR (bottom edge) · x of L_TL (nasal edge)
+  ///
+  /// Heights pair top↔top and bottom↔bottom, but the horizontal edges cross:
+  /// outer↔outer and nasal↔nasal. Pairing them top↔top / bottom↔bottom for
+  /// the horizontal axis too (as this used to) moved the wrong edge of the
+  /// left lens.
+  ///
+  /// Works along the screen axes ([viewRotation]): the horizontal movement is
+  /// mirrored by the same amount in the opposite direction, and the vertical
+  /// edge snaps to the same on-screen height as the dragged corner.
+  void _mirrorToLeftLens(DetectionPoint dragged, Offset delta) {
+    if (!linkLenses) return;
+
+    final DetectionType heightType;
+    final DetectionType sideType;
+    switch (dragged.type) {
+      case DetectionType.lensRightTop:
+        heightType = DetectionType.lensLeftTop;
+        sideType = DetectionType.lensLeftBottom;
         break;
-      }
+      case DetectionType.lensRightBottom:
+        heightType = DetectionType.lensLeftBottom;
+        sideType = DetectionType.lensLeftTop;
+        break;
+      default:
+        return;
+    }
+
+    DetectionPoint? heightPoint;
+    DetectionPoint? sidePoint;
+    for (final p in points) {
+      if (p.type == heightType) heightPoint = p;
+      if (p.type == sideType) sidePoint = p;
+    }
+
+    // Screen-axis unit vectors expressed in image space (same convention as
+    // the painter: eh = screen "right", ev = screen "down").
+    final double cr = math.cos(viewRotation);
+    final double sr = math.sin(viewRotation);
+    final Offset eh = Offset(cr, -sr);
+    final Offset ev = Offset(sr, cr);
+    double dot(Offset a, Offset b) => a.dx * b.dx + a.dy * b.dy;
+
+    if (sidePoint != null) {
+      sidePoint.position -= eh * dot(delta, eh);
+    }
+    if (heightPoint != null) {
+      heightPoint.position +=
+          ev * dot(dragged.position - heightPoint.position, ev);
     }
   }
 
