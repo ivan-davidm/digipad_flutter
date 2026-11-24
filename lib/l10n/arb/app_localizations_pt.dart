@@ -961,11 +961,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get homeBgModeVideo1Loop => 'Vídeo 1 · movimento permanente';
 
   @override
+  String get homeBgModeVideo2Loop => 'Vídeo 2 · movimento permanente';
+
+  @override
   String get homeBgModeVideo3Loop => 'Vídeo 3 · movimento permanente';
 
   @override
   String get homeBgModeVideo1Periodic =>
       'Vídeo 1 · de tempos em tempos, e volta à imagem';
+
+  @override
+  String get homeBgModeVideo2Periodic =>
+      'Vídeo 2 · de tempos em tempos, e volta à imagem';
 
   @override
   String get homeBgModeVideo3Periodic =>

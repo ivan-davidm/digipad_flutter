@@ -1876,6 +1876,12 @@ abstract class AppLocalizations {
   /// **'Video 1 · continuous motion'**
   String get homeBgModeVideo1Loop;
 
+  /// No description provided for @homeBgModeVideo2Loop.
+  ///
+  /// In en, this message translates to:
+  /// **'Video 2 · continuous motion'**
+  String get homeBgModeVideo2Loop;
+
   /// No description provided for @homeBgModeVideo3Loop.
   ///
   /// In en, this message translates to:
@@ -1887,6 +1893,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Video 1 · now and then, then back to the image'**
   String get homeBgModeVideo1Periodic;
+
+  /// No description provided for @homeBgModeVideo2Periodic.
+  ///
+  /// In en, this message translates to:
+  /// **'Video 2 · now and then, then back to the image'**
+  String get homeBgModeVideo2Periodic;
 
   /// No description provided for @homeBgModeVideo3Periodic.
   ///

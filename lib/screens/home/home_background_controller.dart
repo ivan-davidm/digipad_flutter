@@ -33,11 +33,17 @@ enum HomeBackgroundMode {
   /// Video 1 plays forever (today's behaviour).
   video1Loop,
 
+  /// Video 2 plays forever.
+  video2Loop,
+
   /// Video 3 plays forever.
   video3Loop,
 
   /// Wallpaper; every N minutes video 1 plays once and returns to the wallpaper.
   video1Periodic,
+
+  /// Wallpaper; every N minutes video 2 plays once and returns to the wallpaper.
+  video2Periodic,
 
   /// Wallpaper; every N minutes video 3 plays once and returns to the wallpaper.
   video3Periodic,
@@ -161,10 +167,12 @@ class HomeBackgroundController extends ChangeNotifier {
 
   bool get _isLoopMode =>
       _mode == HomeBackgroundMode.video1Loop ||
+      _mode == HomeBackgroundMode.video2Loop ||
       _mode == HomeBackgroundMode.video3Loop;
 
   bool get isPeriodicMode =>
       _mode == HomeBackgroundMode.video1Periodic ||
+      _mode == HomeBackgroundMode.video2Periodic ||
       _mode == HomeBackgroundMode.video3Periodic;
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -245,6 +253,10 @@ class HomeBackgroundController extends ChangeNotifier {
   Future<void> onDoubleTap() async {
     if (_disposed) return;
     _videoIndex = (_videoIndex + 1) % kBackgroundVideos.length;
+    debugPrint(
+      '[HomeBackground] double tap → video ${_videoIndex + 1}/'
+      '${kBackgroundVideos.length} (${kBackgroundVideos[_videoIndex].asset})',
+    );
     _setFeedback(BackgroundFeedback.next);
     await _play(loop: _isLoopMode);
   }
@@ -301,6 +313,9 @@ class HomeBackgroundController extends ChangeNotifier {
       case HomeBackgroundMode.video1Loop:
       case HomeBackgroundMode.video1Periodic:
         return 0;
+      case HomeBackgroundMode.video2Loop:
+      case HomeBackgroundMode.video2Periodic:
+        return 1;
       case HomeBackgroundMode.video3Loop:
       case HomeBackgroundMode.video3Periodic:
         return 2;
@@ -325,10 +340,12 @@ class HomeBackgroundController extends ChangeNotifier {
     _paused = false;
     switch (_mode) {
       case HomeBackgroundMode.video1Loop:
+      case HomeBackgroundMode.video2Loop:
       case HomeBackgroundMode.video3Loop:
         await _play(loop: true);
         break;
       case HomeBackgroundMode.video1Periodic:
+      case HomeBackgroundMode.video2Periodic:
       case HomeBackgroundMode.video3Periodic:
         if (preview) {
           await _play(loop: false);

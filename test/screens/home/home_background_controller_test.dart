@@ -404,4 +404,20 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await finish(tester, h);
   });
+
+  testWidgets('video 2 has its own loop and periodic modes', (tester) async {
+    final h = await start(tester);
+
+    await h.controller.setMode(HomeBackgroundMode.video2Loop);
+    expect(h.controller.videoIndex, 1);
+    expect(h.created.last.asset, v2);
+    expect(h.created.last.playing, isTrue);
+
+    await h.controller.setMode(HomeBackgroundMode.video2Periodic);
+    expect(h.controller.isPeriodicMode, isTrue);
+    expect(h.controller.videoIndex, 1);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('home_bg_mode'), 'video2Periodic');
+    await finish(tester, h);
+  });
 }

@@ -92,8 +92,8 @@ class _HomeScreenState extends State<HomeScreen>
   // Arch layout (restored 2026-11-24 from `origin/fix-digitower-misc`, it was
   // lost when the home background work landed): `left` goes 75→30→75 so the
   // cards bow out in the middle; `top` fractions are evenly spaced from 0.02
-  // to 0.72 and the whole arch is pushed below the logo by
-  // [_logoReservedHeight].
+  // to 0.72 plus [_kMenuTopOffset] (just below the top bar). The DTCP logo
+  // sits bottom-right, out of the arch's way (product request 2026-11-24).
   List<_ModuleDef> _modules(BuildContext context) => [
     _ModuleDef(
       key: 'virtual_mirror',
@@ -175,27 +175,24 @@ class _HomeScreenState extends State<HomeScreen>
             SafeArea(
               child: Stack(
                 children: [
-                  // ── DTCP logo on its oval backdrop, top. Long press opens the
-                  //    background settings (kept hidden so shop customers
-                  //    don't change it).
+                  // ── DTCP logo on its oval backdrop, bottom-right. Long press
+                  //    opens the background settings (kept hidden so shop
+                  //    customers don't change it).
                   Positioned(
-                    top: 4,
-                    left: 0,
-                    right: 250,
-                    child: Center(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onLongPress: () =>
-                            showHomeBackgroundSheet(context, _background),
-                        child: _buildLogo(context),
-                      ),
+                    bottom: 24,
+                    right: 24,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onLongPress: () =>
+                          showHomeBackgroundSheet(context, _background),
+                      child: _buildLogo(context),
                     ),
                   ),
 
-                  // ── Module cards in an arch, below the logo ───────────────────
+                  // ── Module cards in an arch, just below the top bar ───────────
                   for (int i = 0; i < modules.length; i++)
                     Positioned(
-                      top: modules[i].top + _logoReservedHeight(context),
+                      top: modules[i].top + _kMenuTopOffset,
                       left: modules[i].left,
                       child: _AnimatedModuleItem(
                         index: i,
@@ -294,17 +291,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   // ── Logo with oval backdrop ──────────────────────────────────────────────
 
-  /// Vertical space the logo (plus its oval backdrop and a small gap) takes
-  /// up at the top of the screen, so the module arch is pushed below it
-  /// responsively instead of by a fixed offset tuned for one device.
-  double _logoReservedHeight(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.shortestSide >= 550;
-    final logoWidth = isTablet ? 260.0 : 160.0;
-    final logoHeight = logoWidth * (245 / 974); // logo_dtcp.png is 974×245
-    const topOffset = 4.0;
-    const gapBelowLogo = 44.0;
-    return topOffset + logoHeight * 2.2 + gapBelowLogo;
-  }
+  /// Space kept free above the arch for the TÓTEM badge and language picker.
+  static const double _kMenuTopOffset = 64;
 
   Widget _buildLogo(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.shortestSide >= 550;
