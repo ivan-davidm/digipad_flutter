@@ -183,6 +183,10 @@ class _VisagismoResultScreenState extends State<VisagismoResultScreen> {
       case FaceCaptureIssue.headTilted:
         return 'El mentón está muy arriba o abajo. Pedile que mire al frente, '
             'a la altura de la cámara.';
+      case FaceCaptureIssue.detectorError:
+        return 'No se pudo analizar la foto: falló el detector de rostros. '
+            'Probá de nuevo; si sigue igual, avisá a soporte (mantené '
+            'apretado este mensaje para ver el detalle técnico).';
       case FaceCaptureIssue.noFace:
       case null:
         return 'No se detectó un rostro en la foto.';

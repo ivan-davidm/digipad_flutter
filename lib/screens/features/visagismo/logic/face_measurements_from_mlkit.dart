@@ -37,6 +37,11 @@ enum FaceCaptureIssue {
 
   /// Chin raised or lowered too far (pitch).
   headTilted,
+
+  /// The detector itself failed (for example ML Kit could not start). This is
+  /// NOT the same as "no face in the photo": keep them apart so a broken
+  /// detector is never reported to the operator as a missing face.
+  detectorError,
 }
 
 /// Everything learned from one photo: the measurements, the resulting shape
@@ -49,7 +54,14 @@ class FaceAnalysis {
     this.yawDeg,
     this.pitchDeg,
     this.rollDeg,
+    this.errorDetail,
   });
+
+  /// The detector threw: carries the error text for the diagnostics panel.
+  factory FaceAnalysis.detectorFailed(Object error) => FaceAnalysis(
+    issue: FaceCaptureIssue.detectorError,
+    errorDetail: error.toString(),
+  );
 
   final FaceMeasurements? measurements;
   final FaceShapeResult? shape;
@@ -61,6 +73,9 @@ class FaceAnalysis {
   final double? yawDeg;
   final double? pitchDeg;
   final double? rollDeg;
+
+  /// Only for [FaceCaptureIssue.detectorError].
+  final String? errorDetail;
 
   bool get isUsable => issue == null && shape != null;
 }

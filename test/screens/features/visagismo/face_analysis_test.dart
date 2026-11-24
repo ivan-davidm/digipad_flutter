@@ -114,6 +114,17 @@ void main() {
     });
   });
 
+  group('detector failures', () {
+    test('are reported as such, never as "no face"', () {
+      final a = FaceAnalysis.detectorFailed(StateError('mlkit not initialised'));
+      expect(a.issue, FaceCaptureIssue.detectorError);
+      expect(a.issue, isNot(FaceCaptureIssue.noFace));
+      expect(a.errorDetail, contains('mlkit not initialised'));
+      expect(a.isUsable, isFalse);
+      expect(a.shape, isNull);
+    });
+  });
+
   group('head pose gate', () {
     test('turned too far (yaw) → headTurned, no shape', () {
       final a = analyzeFaces([fakeFace(yaw: 30)]);

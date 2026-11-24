@@ -35,6 +35,7 @@ class _FaceAnalysisDebugSheet extends StatelessWidget {
 
     final rows = <(String, String)>[
       if (a?.issue != null) ('Problema', a!.issue!.name),
+      if (a?.errorDetail != null) ('Error del detector', a!.errorDetail!),
       if (shape != null) ('Forma', shape.shape.name),
       if (shape != null) ('Confianza', f(shape.confidence)),
       ('Giro de cabeza (yaw)', f(a?.yawDeg, digits: 1, unit: '°')),
@@ -95,11 +96,14 @@ class _FaceAnalysisDebugSheet extends StatelessWidget {
                           style: const TextStyle(color: Colors.white60),
                         ),
                       ),
-                      Text(
-                        value,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontFeatures: [FontFeature.tabularFigures()],
+                      Flexible(
+                        child: Text(
+                          value,
+                          textAlign: TextAlign.end,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontFeatures: [FontFeature.tabularFigures()],
+                          ),
                         ),
                       ),
                     ],

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:camera/camera.dart';
 import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_state.dart';
 import 'package:digipad_flutter/screens/features/visagismo/data/visagismo_availability.dart';
@@ -132,8 +133,11 @@ class VisagismoCubit extends Cubit<VisagismoState> {
         InputImage.fromFilePath(jpegPath),
       );
       return analyzeFaces(faces);
-    } catch (_) {
-      return const FaceAnalysis(issue: FaceCaptureIssue.noFace);
+    } catch (e, st) {
+      // Never report a detector failure as "no face": log it and carry it to
+      // the result screen so it can be told apart (and diagnosed).
+      debugPrint('[Visagismo] face detector failed: $e\n$st');
+      return FaceAnalysis.detectorFailed(e);
     }
   }
 
