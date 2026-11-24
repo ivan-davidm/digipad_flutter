@@ -33,11 +33,17 @@ enum HomeBackgroundMode {
   /// Video 1 plays forever (today's behaviour).
   video1Loop,
 
+  /// Video 2 plays forever.
+  video2Loop,
+
   /// Video 3 plays forever.
   video3Loop,
 
   /// Wallpaper; every N minutes video 1 plays once and returns to the wallpaper.
   video1Periodic,
+
+  /// Wallpaper; every N minutes video 2 plays once and returns to the wallpaper.
+  video2Periodic,
 
   /// Wallpaper; every N minutes video 3 plays once and returns to the wallpaper.
   video3Periodic,
@@ -122,7 +128,6 @@ class HomeBackgroundController extends ChangeNotifier {
 
   static const String _kModeKey = 'home_bg_mode';
   static const String _kIntervalKey = 'home_bg_interval_min';
-  static const Duration _kDisposeDelay = Duration(milliseconds: 600);
 
   final BackgroundPlayerFactory _playerFactory;
 
@@ -162,10 +167,12 @@ class HomeBackgroundController extends ChangeNotifier {
 
   bool get _isLoopMode =>
       _mode == HomeBackgroundMode.video1Loop ||
+      _mode == HomeBackgroundMode.video2Loop ||
       _mode == HomeBackgroundMode.video3Loop;
 
   bool get isPeriodicMode =>
       _mode == HomeBackgroundMode.video1Periodic ||
+      _mode == HomeBackgroundMode.video2Periodic ||
       _mode == HomeBackgroundMode.video3Periodic;
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -228,22 +235,28 @@ class HomeBackgroundController extends ChangeNotifier {
       await _play(loop: _isLoopMode);
       return;
     }
+    final player = _player!;
     if (_paused) {
       _paused = false;
       _setFeedback(BackgroundFeedback.play);
-      await _player!.play();
+      await _safePlay(player);
       await _armEndTimer(_token);
     } else {
+      // Freeze on the current frame: the video stays visible, only paused.
       _paused = true;
       _endTimer?.cancel();
       _setFeedback(BackgroundFeedback.pause);
-      await _player!.pause();
+      await _safePause(player);
     }
   }
 
   Future<void> onDoubleTap() async {
     if (_disposed) return;
     _videoIndex = (_videoIndex + 1) % kBackgroundVideos.length;
+    debugPrint(
+      '[HomeBackground] double tap → video ${_videoIndex + 1}/'
+      '${kBackgroundVideos.length} (${kBackgroundVideos[_videoIndex].asset})',
+    );
     _setFeedback(BackgroundFeedback.next);
     await _play(loop: _isLoopMode);
   }
@@ -300,6 +313,9 @@ class HomeBackgroundController extends ChangeNotifier {
       case HomeBackgroundMode.video1Loop:
       case HomeBackgroundMode.video1Periodic:
         return 0;
+      case HomeBackgroundMode.video2Loop:
+      case HomeBackgroundMode.video2Periodic:
+        return 1;
       case HomeBackgroundMode.video3Loop:
       case HomeBackgroundMode.video3Periodic:
         return 2;
@@ -324,10 +340,12 @@ class HomeBackgroundController extends ChangeNotifier {
     _paused = false;
     switch (_mode) {
       case HomeBackgroundMode.video1Loop:
+      case HomeBackgroundMode.video2Loop:
       case HomeBackgroundMode.video3Loop:
         await _play(loop: true);
         break;
       case HomeBackgroundMode.video1Periodic:
+      case HomeBackgroundMode.video2Periodic:
       case HomeBackgroundMode.video3Periodic:
         if (preview) {
           await _play(loop: false);
@@ -367,6 +385,20 @@ class HomeBackgroundController extends ChangeNotifier {
       player = _player!;
       await player.seekToStart();
     } else {
+      // Free the current decoder BEFORE opening the next one. Tótem-class
+      // devices often have a single usable hardware decoder for 1080p H.264:
+      // opening video 2 while video 1 was still alive failed or hung there, so
+      // double tap never switched (and video 2 was never seen).
+      final previous = _player;
+      if (previous != null) {
+        _player = null;
+        _playerAsset = null;
+        _videoVisible = false;
+        notifyListeners(); // drop the VideoPlayer widget before disposing
+        await _safePause(previous);
+        await _safeDispose(previous);
+        if (token != _token || _disposed) return;
+      }
       final next = _playerFactory(video.asset);
       try {
         await next.initialize();
@@ -384,13 +416,8 @@ class HomeBackgroundController extends ChangeNotifier {
         await _safeDispose(next);
         return;
       }
-      final previous = _player;
       _player = next;
       _playerAsset = video.asset;
-      if (previous != null) {
-        // Give the widget a moment to stop referencing the old controller.
-        Future<void>.delayed(_kDisposeDelay, () => _safeDispose(previous));
-      }
       player = next;
     }
     if (token != _token || _disposed) return;
@@ -472,6 +499,22 @@ class HomeBackgroundController extends ChangeNotifier {
     _feedback = feedback;
     _feedbackSerial++;
     notifyListeners();
+  }
+
+  Future<void> _safePlay(BackgroundPlayer player) async {
+    try {
+      await player.play();
+    } catch (e) {
+      debugPrint('[HomeBackground] play failed: $e');
+    }
+  }
+
+  Future<void> _safePause(BackgroundPlayer player) async {
+    try {
+      await player.pause();
+    } catch (e) {
+      debugPrint('[HomeBackground] pause failed: $e');
+    }
   }
 
   Future<void> _safeDispose(BackgroundPlayer player) async {

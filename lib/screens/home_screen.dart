@@ -89,29 +89,35 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   // ── Module definitions (order = visual top-to-bottom) ──────────────────────
-  // Straight left-aligned column (per product request 2026-11-08), lower on
-  // screen and with tighter vertical spacing than the previous pass.
+  // Arch layout (restored 2026-11-24 from `origin/fix-digitower-misc`, it was
+  // lost when the home background work landed): `left` goes 75→30→75 so the
+  // cards bow out in the middle; `top` fractions are evenly spaced from 0.02
+  // to 0.72 plus [_kMenuTopOffset] (just below the top bar). The DTCP logo
+  // sits bottom-right, out of the arch's way (product request 2026-11-24).
   List<_ModuleDef> _modules(BuildContext context) => [
     _ModuleDef(
       key: 'virtual_mirror',
       title: context.l10n.menuVirtualMirror,
       icon: Icons.crop_portrait_outlined,
       color: Colors.white,
-      top: MediaQuery.of(context).size.height * 0.20,
+      top: MediaQuery.of(context).size.height * 0.02,
+      left: 75,
     ),
     _ModuleDef(
       key: 'simulations',
       title: context.l10n.menuSimulations,
       icon: Icons.auto_fix_high,
       color: const Color(0xFF4CAF50),
-      top: MediaQuery.of(context).size.height * 0.295,
+      top: MediaQuery.of(context).size.height * 0.1367,
+      left: 60,
     ),
     _ModuleDef(
       key: 'lenses_3d',
       title: context.l10n.menuLenses3D,
       icon: CupertinoIcons.eyeglasses,
       color: Colors.white,
-      top: MediaQuery.of(context).size.height * 0.39,
+      top: MediaQuery.of(context).size.height * 0.2533,
+      left: 45,
     ),
     // 'cosmetic_lenses' hidden per product decision (2026-11-05) — not
     // deleted, just no longer in this list. To bring it back: re-add its
@@ -124,28 +130,32 @@ class _HomeScreenState extends State<HomeScreen>
       title: context.l10n.menuMeasurements,
       icon: Icons.straighten,
       color: const Color(0xFFFB8C00),
-      top: MediaQuery.of(context).size.height * 0.485,
+      top: MediaQuery.of(context).size.height * 0.37,
+      left: 30,
     ),
     _ModuleDef(
       key: 'visagismo',
       title: context.l10n.menuVisagismo,
       icon: Icons.face,
       color: const Color(0xFF9C27B0),
-      top: MediaQuery.of(context).size.height * 0.58,
+      top: MediaQuery.of(context).size.height * 0.4867,
+      left: 45,
     ),
     _ModuleDef(
       key: 'visual_health',
       title: context.l10n.menuVisualHealth,
       icon: Icons.add_rounded,
       color: const Color(0xFFFFD600),
-      top: MediaQuery.of(context).size.height * 0.675,
+      top: MediaQuery.of(context).size.height * 0.6033,
+      left: 60,
     ),
     _ModuleDef(
       key: 'photo_sync',
       title: context.l10n.menuPhotoSync,
       icon: Icons.sync_alt_rounded,
       color: const Color(0xFF00BFA6),
-      top: MediaQuery.of(context).size.height * 0.77,
+      top: MediaQuery.of(context).size.height * 0.72,
+      left: 75,
     ),
   ];
 
@@ -165,8 +175,9 @@ class _HomeScreenState extends State<HomeScreen>
             SafeArea(
               child: Stack(
                 children: [
-                  // ── Logo, bottom-right. Long press opens the background
-                  //    settings (kept hidden so shop customers don't change it).
+                  // ── DTCP logo on its oval backdrop, bottom-right. Long press
+                  //    opens the background settings (kept hidden so shop
+                  //    customers don't change it).
                   Positioned(
                     bottom: 24,
                     right: 24,
@@ -174,19 +185,15 @@ class _HomeScreenState extends State<HomeScreen>
                       behavior: HitTestBehavior.opaque,
                       onLongPress: () =>
                           showHomeBackgroundSheet(context, _background),
-                      child: Image.asset(
-                        'assets/images/logo1.png',
-                        height: MediaQuery.of(context).size.height * 0.175,
-                        fit: BoxFit.contain,
-                      ),
+                      child: _buildLogo(context),
                     ),
                   ),
 
-                  // ── Straight left-aligned column of module cards ──────────────
+                  // ── Module cards in an arch, just below the top bar ───────────
                   for (int i = 0; i < modules.length; i++)
                     Positioned(
-                      top: modules[i].top,
-                      left: 32,
+                      top: modules[i].top + _kMenuTopOffset,
+                      left: modules[i].left,
                       child: _AnimatedModuleItem(
                         index: i,
                         total: _moduleCount,
@@ -282,6 +289,33 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  // ── Logo with oval backdrop ──────────────────────────────────────────────
+
+  /// Space kept free above the arch for the TÓTEM badge and language picker.
+  static const double _kMenuTopOffset = 64;
+
+  Widget _buildLogo(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.shortestSide >= 550;
+    final logoWidth = isTablet ? 260.0 : 160.0;
+    final logoHeight = logoWidth * (245 / 974);
+
+    return Container(
+      width: logoWidth * 1.35,
+      height: logoHeight * 2.2,
+      decoration: BoxDecoration(
+        color: Colors.white24,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      alignment: Alignment.center,
+      child: Image.asset(
+        'assets/images/logo_dtcp.png',
+        width: logoWidth,
+        height: logoHeight,
+        fit: BoxFit.contain,
+      ),
+    );
+  }
+
   // ── Individual pill button ────────────────────────────────────────────────
 
   Widget _buildArchMenuItem({
@@ -297,18 +331,18 @@ class _HomeScreenState extends State<HomeScreen>
     final labelFontSize = isTablet ? 20.0 : 12.0;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(80),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(80),
           child: Container(
             width: buttonWidth,
             height: buttonHeight,
             decoration: BoxDecoration(
               color: def.color.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(80),
               border: Border.all(
                 color: def.color.withValues(alpha: 0.4),
                 width: 1.5,
@@ -465,6 +499,7 @@ class _ModuleDef {
   final IconData icon;
   final Color color;
   final double top;
+  final double left;
 
   const _ModuleDef({
     required this.key,
@@ -472,6 +507,7 @@ class _ModuleDef {
     required this.icon,
     required this.color,
     required this.top,
+    required this.left,
   });
 }
 

@@ -185,10 +185,14 @@ class _HomeBackgroundSheet extends StatelessWidget {
     switch (mode) {
       case HomeBackgroundMode.video1Loop:
         return l10n.homeBgModeVideo1Loop;
+      case HomeBackgroundMode.video2Loop:
+        return l10n.homeBgModeVideo2Loop;
       case HomeBackgroundMode.video3Loop:
         return l10n.homeBgModeVideo3Loop;
       case HomeBackgroundMode.video1Periodic:
         return l10n.homeBgModeVideo1Periodic;
+      case HomeBackgroundMode.video2Periodic:
+        return l10n.homeBgModeVideo2Periodic;
       case HomeBackgroundMode.video3Periodic:
         return l10n.homeBgModeVideo3Periodic;
       case HomeBackgroundMode.still:
@@ -263,14 +267,32 @@ class _HomeBackgroundSheet extends StatelessWidget {
                     spacing: 8,
                     children: [
                       for (final minutes in kHomeBackgroundIntervals)
-                        ChoiceChip(
-                          label: Text('$minutes min'),
-                          selected: controller.intervalMinutes == minutes,
-                          selectedColor: accent.withValues(alpha: 0.35),
-                          backgroundColor: Colors.white10,
-                          labelStyle: const TextStyle(color: Colors.white),
-                          onSelected: (_) =>
-                              controller.setIntervalMinutes(minutes),
+                        Builder(
+                          builder: (context) {
+                            // Explicit colours: the theme's default chip is
+                            // light, which made white labels unreadable.
+                            final selected =
+                                controller.intervalMinutes == minutes;
+                            return ChoiceChip(
+                              label: Text('$minutes min'),
+                              selected: selected,
+                              showCheckmark: true,
+                              checkmarkColor: Colors.black,
+                              selectedColor: accent,
+                              backgroundColor: const Color(0xFF2A2A2A),
+                              side: BorderSide(
+                                color: selected ? accent : Colors.white38,
+                              ),
+                              labelStyle: TextStyle(
+                                color: selected ? Colors.black : Colors.white,
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                              onSelected: (_) =>
+                                  controller.setIntervalMinutes(minutes),
+                            );
+                          },
                         ),
                     ],
                   ),

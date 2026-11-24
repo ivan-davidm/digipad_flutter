@@ -1,6 +1,9 @@
 import 'dart:ui';
 
+import 'package:digipad_flutter/screens/home/home_background.dart';
 import 'package:digipad_flutter/screens/home/home_background_controller.dart';
+import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -54,10 +57,16 @@ class FakePlayer implements BackgroundPlayer {
 class Harness {
   final List<FakePlayer> created = [];
   bool failInit = false;
+
+  /// Most decoders that were alive (created, not yet disposed) at once.
+  int maxAlive = 0;
+
   late final HomeBackgroundController controller = HomeBackgroundController(
     playerFactory: (asset) {
       final p = FakePlayer(asset)..failInit = failInit;
       created.add(p);
+      final alive = created.where((c) => !c.disposed).length;
+      if (alive > maxAlive) maxAlive = alive;
       return p;
     },
   );
@@ -314,6 +323,101 @@ void main() {
 
     expect(h.controller.mode, HomeBackgroundMode.video1Loop);
     expect(h.controller.intervalMinutes, 2);
+    await finish(tester, h);
+  });
+
+  testWidgets('switching video frees the current decoder first (one at a time)',
+      (tester) async {
+    final h = await start(tester);
+
+    await h.controller.onDoubleTap(); // 1 -> 2
+    await h.controller.onDoubleTap(); // 2 -> 3
+    await h.controller.onDoubleTap(); // 3 -> 1
+
+    expect(h.created.map((p) => p.asset), [v1, v2, v3, v1]);
+    expect(h.maxAlive, 1, reason: 'Tótem boxes may have a single decoder');
+    expect(h.created.take(3).every((p) => p.disposed), isTrue);
+    expect(h.created.last.playing, isTrue);
+    expect(h.controller.videoVisible, isTrue);
+    await finish(tester, h);
+  });
+
+  testWidgets('real gestures reach the background through the menu layer',
+      (tester) async {
+    final h = await start(tester);
+    final v1Player = h.created.single;
+
+    // Same layering as HomeScreen: background, then a full-screen Stack with
+    // positioned cards on top.
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              HomeBackground(controller: h.controller),
+              SafeArea(
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 100,
+                      left: 30,
+                      child: InkWell(
+                        onTap: () {},
+                        child: const SizedBox(width: 200, height: 50),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    const empty = Offset(500, 500);
+
+    // Single tap → pause (frozen frame, still visible).
+    await tester.tapAt(empty);
+    await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 50));
+    expect(h.controller.isPaused, isTrue);
+    expect(v1Player.playing, isFalse);
+    expect(h.controller.videoVisible, isTrue);
+
+    // Tap again → resumes.
+    await tester.tapAt(empty);
+    await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 50));
+    expect(h.controller.isPaused, isFalse);
+    expect(v1Player.playing, isTrue);
+
+    // Double tap → video 2.
+    await tester.tapAt(empty);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tapAt(empty);
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(h.controller.videoIndex, 1);
+    expect(h.created.last.asset, v2);
+    expect(h.created.last.playing, isTrue);
+    expect(v1Player.disposed, isTrue);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await finish(tester, h);
+  });
+
+  testWidgets('video 2 has its own loop and periodic modes', (tester) async {
+    final h = await start(tester);
+
+    await h.controller.setMode(HomeBackgroundMode.video2Loop);
+    expect(h.controller.videoIndex, 1);
+    expect(h.created.last.asset, v2);
+    expect(h.created.last.playing, isTrue);
+
+    await h.controller.setMode(HomeBackgroundMode.video2Periodic);
+    expect(h.controller.isPeriodicMode, isTrue);
+    expect(h.controller.videoIndex, 1);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('home_bg_mode'), 'video2Periodic');
     await finish(tester, h);
   });
 }
