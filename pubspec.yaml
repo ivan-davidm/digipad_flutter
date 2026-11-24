@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 4.0.0+27
+version: 4.0.0+28
 
 environment:
   sdk: '>=3.8.1 <4.0.0'
@@ -73,7 +73,7 @@ dependencies:
   screenshot: 3.0.0
   widget_zoom: 0.0.4
   provider: 6.1.5+1
-  intl: 0.20.2
+  intl: ^0.20.3
   share_plus: ^12.0.1
 
   # UI
@@ -135,9 +135,12 @@ flutter:
     - assets/images/simulations/tint/
     - assets/images/lenses_3d/
     - assets/images/visagismo/
+    - assets/images/visagismo/frames/
     - assets/images/
     - assets/svgs/
     - assets/videos/home_background.mp4
+    - assets/videos/home_background_2.mp4
+    - assets/videos/home_background_3.mp4
 
 # Flutter Native Splash Configuration
 flutter_native_splash:

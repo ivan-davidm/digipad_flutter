@@ -6,7 +6,9 @@ import 'package:digipad_flutter/screens/features/visagismo/presentation/visagism
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Live front-camera preview + capture button. Plain `camera`-plugin
+/// Live camera preview + capture button. Starts on the REAR camera (the
+/// operator aims it at the client and can see the screen); a button flips to
+/// the front camera when the device has one. Plain `camera`-plugin
 /// `CameraPreview` (no custom native view) — replaces the earlier
 /// ARCore/SceneView-based live AR screen, which hit an unresolved native
 /// `AR_ERROR_TEXTURE_NOT_SET` bug on real hardware. This flow captures a
@@ -23,6 +25,8 @@ class VisagismoCaptureScreen extends StatefulWidget {
 class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
     with WidgetsBindingObserver {
   CameraController? _controller;
+  CameraLensDirection _direction = CameraLensDirection.back;
+  bool _canFlip = false;
   bool _isInitializing = true;
   bool _isCapturing = false;
   String? _error;
@@ -41,12 +45,22 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
     });
     try {
       final cameras = await availableCameras();
-      final front = cameras.firstWhere(
+      final hasFront = cameras.any(
         (c) => c.lensDirection == CameraLensDirection.front,
-        orElse: () => cameras.first,
       );
+      final hasBack = cameras.any(
+        (c) => c.lensDirection == CameraLensDirection.back,
+      );
+      // Honour the requested side when the device has it; otherwise use
+      // whatever camera exists.
+      final wanted = cameras.where((c) => c.lensDirection == _direction);
+      final camera = wanted.isNotEmpty ? wanted.first : cameras.first;
+      _direction = camera.lensDirection == CameraLensDirection.front
+          ? CameraLensDirection.front
+          : CameraLensDirection.back;
+      _canFlip = hasFront && hasBack;
       final controller = CameraController(
-        front,
+        camera,
         ResolutionPreset.high,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
@@ -115,12 +129,42 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
     }
   }
 
+  Future<void> _flipCamera() async {
+    if (_isCapturing || _isInitializing || !_canFlip) return;
+    final old = _controller;
+    setState(() {
+      _controller = null;
+      _direction = _direction == CameraLensDirection.back
+          ? CameraLensDirection.front
+          : CameraLensDirection.back;
+    });
+    await old?.dispose();
+    await _initCamera();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         Positioned.fill(child: _buildPreview()),
         if (_controller != null) const _FaceGuideOverlay(),
+        if (_controller != null && _canFlip)
+          Positioned(
+            top: 12,
+            right: 12,
+            child: Material(
+              color: Colors.black.withValues(alpha: 0.45),
+              shape: const CircleBorder(side: BorderSide(color: Colors.white24)),
+              child: IconButton(
+                tooltip: _direction == CameraLensDirection.back
+                    ? 'Cámara frontal'
+                    : 'Cámara trasera',
+                icon: const Icon(Icons.flip_camera_android_rounded,
+                    color: Colors.white),
+                onPressed: _flipCamera,
+              ),
+            ),
+          ),
         if (_controller != null)
           Positioned(
             bottom: 32,
@@ -174,10 +218,13 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
       );
     }
     // Front camera preview feels wrong unmirrored — users expect a selfie
-    // mirror, like every other camera app's front-facing preview.
+    // mirror, like every other camera app's front-facing preview. The rear
+    // camera shows the scene as it is.
     return Transform(
       alignment: Alignment.center,
-      transform: Matrix4.rotationY(math.pi),
+      transform: _direction == CameraLensDirection.front
+          ? Matrix4.rotationY(math.pi)
+          : Matrix4.identity(),
       child: SizedBox.expand(
         child: FittedBox(
           fit: BoxFit.cover,

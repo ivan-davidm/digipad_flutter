@@ -20,12 +20,154 @@ import 'face_shape_classifier.dart';
 /// contour's ~36 points are "the jaw corners" (fragile, device/ML-Kit-version
 /// dependent), this scans the contour for the width at each face-height band
 /// (top/bottom thirds) — robust to exactly how ML Kit orders those points.
-FaceMeasurements? faceMeasurementsFromFace(Face face) {
-  final contour = face.contours[FaceContourType.face]?.points;
-  if (contour == null || contour.length < 8) return null;
 
-  final ys = contour.map((p) => p.y.toDouble());
-  final xs = contour.map((p) => p.x.toDouble());
+/// A face turned left/right (yaw) or looking up/down (pitch) by more than this
+/// many degrees is rejected: the 2D proportions are no longer those of the
+/// face, so the classification would be meaningless.
+const double kMaxHeadYawDeg = 20.0;
+const double kMaxHeadPitchDeg = 20.0;
+
+/// Why a photo could not be classified.
+enum FaceCaptureIssue {
+  /// No usable face found.
+  noFace,
+
+  /// Face turned too far left/right (yaw).
+  headTurned,
+
+  /// Chin raised or lowered too far (pitch).
+  headTilted,
+}
+
+/// Everything learned from one photo: the measurements, the resulting shape
+/// (when the photo was usable) and the head pose (for the debug panel).
+class FaceAnalysis {
+  const FaceAnalysis({
+    this.measurements,
+    this.shape,
+    this.issue,
+    this.yawDeg,
+    this.pitchDeg,
+    this.rollDeg,
+  });
+
+  final FaceMeasurements? measurements;
+  final FaceShapeResult? shape;
+
+  /// Non-null when the photo can't be used and should be retaken.
+  final FaceCaptureIssue? issue;
+
+  /// ML Kit head Euler angles, in degrees (null if not reported).
+  final double? yawDeg;
+  final double? pitchDeg;
+  final double? rollDeg;
+
+  bool get isUsable => issue == null && shape != null;
+}
+
+/// Pure analysis step (no platform calls) so it can be unit-tested with
+/// hand-built [Face] objects: picks the main face, rejects bad head poses,
+/// measures and classifies.
+FaceAnalysis analyzeFaces(List<Face> faces) {
+  final face = pickMainFace(faces);
+  if (face == null) return const FaceAnalysis(issue: FaceCaptureIssue.noFace);
+
+  final yaw = face.headEulerAngleY;
+  final pitch = face.headEulerAngleX;
+  final roll = face.headEulerAngleZ;
+  final measurements = faceMeasurementsFromFace(face);
+
+  final issue = faceCaptureIssue(face);
+  if (issue != null) {
+    return FaceAnalysis(
+      measurements: measurements,
+      issue: issue,
+      yawDeg: yaw,
+      pitchDeg: pitch,
+      rollDeg: roll,
+    );
+  }
+  if (measurements == null) {
+    return FaceAnalysis(
+      issue: FaceCaptureIssue.noFace,
+      yawDeg: yaw,
+      pitchDeg: pitch,
+      rollDeg: roll,
+    );
+  }
+  return FaceAnalysis(
+    measurements: measurements,
+    shape: classifyFaceShape(measurements),
+    yawDeg: yaw,
+    pitchDeg: pitch,
+    rollDeg: roll,
+  );
+}
+
+/// The face to analyse when several are detected: the largest one (the
+/// client in front of the camera, not someone in the background).
+Face? pickMainFace(List<Face> faces) {
+  if (faces.isEmpty) return null;
+  double area(Face f) => f.boundingBox.width * f.boundingBox.height;
+  return faces.reduce((a, b) => area(a) >= area(b) ? a : b);
+}
+
+/// `headTurned` / `headTilted` when the pose makes the 2D proportions
+/// unreliable, null when the photo is fine. In-plane roll is NOT an issue —
+/// it is corrected in [faceMeasurementsFromFace].
+FaceCaptureIssue? faceCaptureIssue(Face face) {
+  final yaw = face.headEulerAngleY?.abs();
+  if (yaw != null && yaw > kMaxHeadYawDeg) return FaceCaptureIssue.headTurned;
+  final pitch = face.headEulerAngleX?.abs();
+  if (pitch != null && pitch > kMaxHeadPitchDeg) {
+    return FaceCaptureIssue.headTilted;
+  }
+  return null;
+}
+
+/// Contour points as doubles, rotated so that the line through the eyes is
+/// horizontal. A head tilted sideways (roll) would otherwise skew every band
+/// measurement. Uses the eye landmarks themselves rather than ML Kit's roll
+/// angle so it does not depend on that angle's sign convention. Without both
+/// eye landmarks (or with an implausible > 45° eye line) the points are
+/// returned untouched.
+List<Point<double>> _levelledContour(Face face, List<Point<int>> contour) {
+  final points = [
+    for (final p in contour) Point<double>(p.x.toDouble(), p.y.toDouble()),
+  ];
+  final a = face.landmarks[FaceLandmarkType.leftEye]?.position;
+  final b = face.landmarks[FaceLandmarkType.rightEye]?.position;
+  if (a == null || b == null) return points;
+
+  final left = a.x <= b.x ? a : b;
+  final right = a.x <= b.x ? b : a;
+  final dx = (right.x - left.x).toDouble();
+  final dy = (right.y - left.y).toDouble();
+  if (dx.abs() < 1) return points;
+
+  final roll = atan2(dy, dx);
+  if (roll.abs() < 0.0087 || roll.abs() > pi / 4) return points; // <0.5° or >45°
+
+  final cx = (left.x + right.x) / 2.0;
+  final cy = (left.y + right.y) / 2.0;
+  final c = cos(roll);
+  final s = sin(roll);
+  return [
+    for (final p in points)
+      Point<double>(
+        cx + (p.x - cx) * c + (p.y - cy) * s,
+        cy - (p.x - cx) * s + (p.y - cy) * c,
+      ),
+  ];
+}
+
+FaceMeasurements? faceMeasurementsFromFace(Face face) {
+  final rawContour = face.contours[FaceContourType.face]?.points;
+  if (rawContour == null || rawContour.length < 8) return null;
+  final contour = _levelledContour(face, rawContour);
+
+  final ys = contour.map((p) => p.y);
+  final xs = contour.map((p) => p.x);
   final minY = ys.reduce(min);
   final maxY = ys.reduce(max);
   final faceHeight = maxY - minY;
@@ -44,9 +186,8 @@ FaceMeasurements? faceMeasurementsFromFace(Face face) {
     for (final p in contour) {
       final t = (p.y - minY) / faceHeight;
       if (t < bandStart || t > bandEnd) continue;
-      final point = Point(p.x.toDouble(), p.y.toDouble());
-      if (leftmost == null || point.x < leftmost.x) leftmost = point;
-      if (rightmost == null || point.x > rightmost.x) rightmost = point;
+      if (leftmost == null || p.x < leftmost.x) leftmost = p;
+      if (rightmost == null || p.x > rightmost.x) rightmost = p;
     }
     if (leftmost == null || rightmost == null) return null;
     return (leftmost, rightmost);
@@ -64,8 +205,7 @@ FaceMeasurements? faceMeasurementsFromFace(Face face) {
   final jawWidth = jawPair.$2.x - jawPair.$1.x;
 
   // Chin tip: the contour point with the largest y (bottommost).
-  final chin = contour.reduce((a, b) => a.y >= b.y ? a : b);
-  final chinPoint = Point(chin.x.toDouble(), chin.y.toDouble());
+  final chinPoint = contour.reduce((a, b) => a.y >= b.y ? a : b);
 
   // Same angle-at-the-chin proxy the native mesh version used, just in 2D
   // (z implicitly 0 for both vectors, which doesn't change the angle between

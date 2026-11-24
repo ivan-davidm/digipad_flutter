@@ -3,7 +3,10 @@ import 'dart:io';
 import 'package:digipad_flutter/data/local/gallery_storage.dart';
 import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_cubit.dart';
 import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_state.dart';
+import 'package:digipad_flutter/screens/features/visagismo/data/visagismo_catalog_repository.dart';
+import 'package:digipad_flutter/screens/features/visagismo/logic/face_measurements_from_mlkit.dart';
 import 'package:digipad_flutter/screens/features/visagismo/logic/face_shape_classifier.dart';
+import 'package:digipad_flutter/screens/features/visagismo/widgets/face_analysis_debug_sheet.dart';
 import 'package:digipad_flutter/screens/features/visagismo/widgets/face_shape_badge.dart';
 import 'package:digipad_flutter/screens/features/visagismo/widgets/frame_suggestions_list.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +34,9 @@ class _VisagismoResultScreenState extends State<VisagismoResultScreen> {
 
   Future<void> _maybeSaveCapture(BuildContext context) async {
     final imagePath = context.read<VisagismoCubit>().state.capturedImagePath;
-    if (imagePath == null || imagePath.isEmpty || imagePath == _savedImagePath) {
+    if (imagePath == null ||
+        imagePath.isEmpty ||
+        imagePath == _savedImagePath) {
       return;
     }
     _savedImagePath = imagePath;
@@ -64,14 +69,10 @@ class _VisagismoResultScreenState extends State<VisagismoResultScreen> {
 
         final filteredCatalog = result == null
             ? state.catalog
-            : state.catalog
-                .where(
-                  (item) => item.shapeTags
-                      .any((tag) => result.recommendedFrameTags.contains(tag)),
-                )
-                .toList();
-        final catalogToShow =
-            filteredCatalog.isEmpty ? state.catalog : filteredCatalog;
+            : rankFramesForTags(state.catalog, result.recommendedFrameTags);
+        final catalogToShow = filteredCatalog.isEmpty
+            ? state.catalog
+            : filteredCatalog;
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -126,6 +127,7 @@ class _VisagismoResultScreenState extends State<VisagismoResultScreen> {
                     _buildResultCard(
                       context: context,
                       result: result,
+                      analysis: state.lastAnalysis,
                       imagePath: imagePath,
                       cubit: cubit,
                     ),
@@ -173,94 +175,116 @@ class _VisagismoResultScreenState extends State<VisagismoResultScreen> {
     );
   }
 
+  /// What to tell the operator when the photo could not be classified.
+  static String _issueMessage(FaceCaptureIssue? issue) {
+    switch (issue) {
+      case FaceCaptureIssue.headTurned:
+        return 'El rostro está girado. Pedile que mire de frente a la cámara.';
+      case FaceCaptureIssue.headTilted:
+        return 'El mentón está muy arriba o abajo. Pedile que mire al frente, '
+            'a la altura de la cámara.';
+      case FaceCaptureIssue.noFace:
+      case null:
+        return 'No se detectó un rostro en la foto.';
+    }
+  }
+
   Widget _buildResultCard({
     required BuildContext context,
     required FaceShapeResult? result,
+    required FaceAnalysis? analysis,
     required String? imagePath,
     required VisagismoCubit cubit,
   }) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(14, 0, 14, 0),
-      transform: Matrix4.translationValues(0, -20, 0),
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1C1C22),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: result != null
-                    ? FaceShapeBadge(result: result)
-                    : const Text(
-                        'No se detectó un rostro en la foto.',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-              ),
-              TextButton.icon(
-                onPressed: () => cubit.retakePhoto(),
-                icon: const Icon(Icons.replay, size: 18),
-                label: const Text('Repetir'),
-                style: TextButton.styleFrom(foregroundColor: Colors.white70),
-              ),
-            ],
-          ),
-          if (result != null && result.recommendedFrameTags.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            const Text(
-              'Recomendado para tu forma de rostro',
-              style: TextStyle(
-                color: Colors.white38,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: result.recommendedFrameTags
-                  .map((tag) => _RecommendationChip(label: tag))
-                  .toList(),
+    return GestureDetector(
+      // Hidden diagnostics for the optician.
+      onLongPress: () => showFaceAnalysisDebugSheet(context, analysis),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(14, 0, 14, 0),
+        transform: Matrix4.translationValues(0, -20, 0),
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1C1C22),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Colors.white12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
           ],
-          if (imagePath != null && imagePath.isNotEmpty) ...[
-            const SizedBox(height: 14),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  imagePath == _savedImagePath
-                      ? Icons.check_circle
-                      : Icons.hourglass_top,
-                  color: imagePath == _savedImagePath
-                      ? const Color(0xFF00E676)
-                      : Colors.white54,
-                  size: 16,
+                Expanded(
+                  child: result != null
+                      ? FaceShapeBadge(result: result)
+                      : Text(
+                          _issueMessage(analysis?.issue),
+                          style: const TextStyle(color: Colors.white70),
+                        ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  imagePath == _savedImagePath
-                      ? 'Guardada en la galería interna'
-                      : 'Guardando en la galería…',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12.5),
+                TextButton.icon(
+                  onPressed: () => cubit.retakePhoto(),
+                  icon: const Icon(Icons.replay, size: 18),
+                  label: const Text('Repetir'),
+                  style: TextButton.styleFrom(foregroundColor: Colors.white70),
                 ),
               ],
             ),
+            if (result != null && result.recommendedFrameTags.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              const Text(
+                'Recomendado para tu forma de rostro',
+                style: TextStyle(
+                  color: Colors.white38,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: result.recommendedFrameTags
+                    .map((tag) => _RecommendationChip(label: tag))
+                    .toList(),
+              ),
+            ],
+            if (imagePath != null && imagePath.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Icon(
+                    imagePath == _savedImagePath
+                        ? Icons.check_circle
+                        : Icons.hourglass_top,
+                    color: imagePath == _savedImagePath
+                        ? const Color(0xFF00E676)
+                        : Colors.white54,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    imagePath == _savedImagePath
+                        ? 'Guardada en la galería interna'
+                        : 'Guardando en la galería…',
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

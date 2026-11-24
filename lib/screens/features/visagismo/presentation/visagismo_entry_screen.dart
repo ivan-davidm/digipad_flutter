@@ -65,9 +65,9 @@ class _UnavailableView extends StatelessWidget {
         child: const Text('Abrir ajustes'),
       );
     } else {
-      message = 'No se detectó una cámara frontal disponible en este '
-          'dispositivo. La prueba de visagismo necesita una cámara frontal '
-          'para funcionar.';
+      message = 'No se detectó ninguna cámara disponible en este '
+          'dispositivo. La prueba de visagismo necesita una cámara para '
+          'funcionar.';
     }
 
     return Center(

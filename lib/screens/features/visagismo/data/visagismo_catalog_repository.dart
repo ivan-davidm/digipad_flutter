@@ -40,11 +40,7 @@ class VisagismoCatalogRepository {
   List<FrameCatalogItem> filterByShapeTags(
     List<FrameCatalogItem> catalog,
     List<String> shapeTags,
-  ) {
-    return catalog
-        .where((item) => item.shapeTags.any(shapeTags.contains))
-        .toList();
-  }
+  ) => rankFramesForTags(catalog, shapeTags);
 
   /// Entitlement resolution is a deliberate stub for this phase: there is no
   /// purchasing/entitlement UI yet, so every account sees only the generic
@@ -58,4 +54,35 @@ class VisagismoCatalogRepository {
     if (tier == 'generic') return true;
     return false;
   }
+}
+
+/// Frames that match any of [recommendedTags], best fit first.
+///
+/// `recommendedTags` comes ranked from the classifier (best-fit tag first), so
+/// each frame is scored by the position of its best-matching tag and the list
+/// is ordered by that score. Ties keep the catalog's own order. Frames with no
+/// matching tag are dropped.
+List<FrameCatalogItem> rankFramesForTags(
+  List<FrameCatalogItem> catalog,
+  List<String> recommendedTags,
+) {
+  int rankOf(FrameCatalogItem item) {
+    var best = -1;
+    for (final tag in item.shapeTags) {
+      final i = recommendedTags.indexOf(tag);
+      if (i >= 0 && (best < 0 || i < best)) best = i;
+    }
+    return best;
+  }
+
+  final scored = <(int, int, FrameCatalogItem)>[];
+  for (var i = 0; i < catalog.length; i++) {
+    final rank = rankOf(catalog[i]);
+    if (rank >= 0) scored.add((rank, i, catalog[i]));
+  }
+  scored.sort((a, b) {
+    final byRank = a.$1.compareTo(b.$1);
+    return byRank != 0 ? byRank : a.$2.compareTo(b.$2);
+  });
+  return [for (final s in scored) s.$3];
 }
