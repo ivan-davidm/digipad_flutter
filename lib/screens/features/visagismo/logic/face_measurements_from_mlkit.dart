@@ -55,6 +55,7 @@ class FaceAnalysis {
     this.pitchDeg,
     this.rollDeg,
     this.errorDetail,
+    this.glasses,
   });
 
   /// The detector threw: carries the error text for the diagnostics panel.
@@ -77,6 +78,10 @@ class FaceAnalysis {
   /// Only for [FaceCaptureIssue.detectorError].
   final String? errorDetail;
 
+  /// Where a pair of glasses sits on this face, in photo pixels (for the
+  /// try-on). Null when the eyes were not found.
+  final GlassesAnchor? glasses;
+
   bool get isUsable => issue == null && shape != null;
 }
 
@@ -91,6 +96,7 @@ FaceAnalysis analyzeFaces(List<Face> faces) {
   final pitch = face.headEulerAngleX;
   final roll = face.headEulerAngleZ;
   final measurements = faceMeasurementsFromFace(face);
+  final glasses = glassesAnchorFromFace(face);
 
   final issue = faceCaptureIssue(face);
   if (issue != null) {
@@ -100,6 +106,7 @@ FaceAnalysis analyzeFaces(List<Face> faces) {
       yawDeg: yaw,
       pitchDeg: pitch,
       rollDeg: roll,
+      glasses: glasses,
     );
   }
   if (measurements == null) {
@@ -108,6 +115,7 @@ FaceAnalysis analyzeFaces(List<Face> faces) {
       yawDeg: yaw,
       pitchDeg: pitch,
       rollDeg: roll,
+      glasses: glasses,
     );
   }
   return FaceAnalysis(
@@ -116,6 +124,70 @@ FaceAnalysis analyzeFaces(List<Face> faces) {
     yawDeg: yaw,
     pitchDeg: pitch,
     rollDeg: roll,
+    glasses: glasses,
+  );
+}
+
+/// Eye line and face width at eye level, in the photo's pixel space (ML Kit
+/// reports positions in the upright image, the same space `Image.file` shows).
+class GlassesAnchor {
+  const GlassesAnchor({
+    required this.eyeCenterX,
+    required this.eyeCenterY,
+    required this.eyeDistance,
+    required this.faceWidthAtEyes,
+    required this.rollRad,
+  });
+
+  final double eyeCenterX;
+  final double eyeCenterY;
+  final double eyeDistance;
+
+  /// Width of the face contour around the eye line (temple to temple), or
+  /// null when the contour was missing there.
+  final double? faceWidthAtEyes;
+
+  /// Angle of the eye line, clockwise-positive in screen coordinates (y down),
+  /// i.e. the rotation to apply to a level pair of glasses.
+  final double rollRad;
+}
+
+/// [GlassesAnchor] from the eye landmarks and the face contour, or null
+/// without both eyes.
+GlassesAnchor? glassesAnchorFromFace(Face face) {
+  final a = face.landmarks[FaceLandmarkType.leftEye]?.position;
+  final b = face.landmarks[FaceLandmarkType.rightEye]?.position;
+  if (a == null || b == null) return null;
+  final left = a.x <= b.x ? a : b;
+  final right = a.x <= b.x ? b : a;
+  final dx = (right.x - left.x).toDouble();
+  final dy = (right.y - left.y).toDouble();
+  final distance = sqrt(dx * dx + dy * dy);
+  if (distance < 2) return null;
+
+  final cx = (left.x + right.x) / 2.0;
+  final cy = (left.y + right.y) / 2.0;
+
+  double? widthAtEyes;
+  final raw = face.contours[FaceContourType.face]?.points;
+  if (raw != null && raw.length >= 8) {
+    // Levelled around the eye midpoint, so the eye line is y == cy.
+    final contour = _levelledContour(face, raw);
+    final ys = contour.map((p) => p.y);
+    final band = (ys.reduce(max) - ys.reduce(min)) * 0.12;
+    final near = [
+      for (final p in contour)
+        if ((p.y - cy).abs() <= band) p.x,
+    ];
+    if (near.length >= 2) widthAtEyes = near.reduce(max) - near.reduce(min);
+  }
+
+  return GlassesAnchor(
+    eyeCenterX: cx,
+    eyeCenterY: cy,
+    eyeDistance: distance,
+    faceWidthAtEyes: widthAtEyes,
+    rollRad: atan2(dy, dx),
   );
 }
 

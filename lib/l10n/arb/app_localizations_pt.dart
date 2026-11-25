@@ -1023,4 +1023,223 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get copyAtoB => 'Copiar A para B';
+
+  @override
+  String get visagismoAnalyzing => 'Analisando o rosto…';
+
+  @override
+  String get visagismoCameraPermissionBody =>
+      'Esta função precisa de permissão de câmera para funcionar. Ative-a nas configurações do dispositivo.';
+
+  @override
+  String get visagismoCameraStartFailed => 'Não foi possível iniciar a câmera.';
+
+  @override
+  String get visagismoCaptureFailed => 'Erro ao tirar a foto. Tente novamente.';
+
+  @override
+  String get visagismoConnectToTotem => 'Conectar ao Tótem';
+
+  @override
+  String visagismoConnectedTo(String totem) {
+    return 'Conectado ao Tótem ($totem)';
+  }
+
+  @override
+  String get visagismoDiagChin => 'Queixo (0 arredondado – 1 pontudo)';
+
+  @override
+  String get visagismoDiagConfidence => 'Confiança';
+
+  @override
+  String get visagismoDiagDetectorError => 'Erro do detector';
+
+  @override
+  String get visagismoDiagFootnote =>
+      'As proporções são calculadas em pixels sobre o contorno do ML Kit, que vai até o meio da testa (não até a linha do cabelo). Os limites do classificador ainda não foram validados com rostos de referência.';
+
+  @override
+  String get visagismoDiagForeheadCheek => 'Testa / maçãs do rosto';
+
+  @override
+  String get visagismoDiagIssue => 'Problema';
+
+  @override
+  String get visagismoDiagJawAngle => 'Ângulo da mandíbula';
+
+  @override
+  String get visagismoDiagJawCheek => 'Mandíbula / maçãs do rosto';
+
+  @override
+  String get visagismoDiagNoData => 'Sem dados da última foto.';
+
+  @override
+  String get visagismoDiagPitch => 'Inclinação vertical (pitch)';
+
+  @override
+  String get visagismoDiagRoll => 'Inclinação lateral (roll)';
+
+  @override
+  String get visagismoDiagShape => 'Formato';
+
+  @override
+  String get visagismoDiagTitle => 'Medições (diagnóstico)';
+
+  @override
+  String get visagismoDiagWidthHeight => 'Largura / altura';
+
+  @override
+  String get visagismoDiagWidthHeightPx => 'Largura / altura (px)';
+
+  @override
+  String get visagismoDiagYaw => 'Giro da cabeça (yaw)';
+
+  @override
+  String visagismoFaceShapeName(String shape) {
+    String _temp0 = intl.Intl.selectLogic(shape, {
+      'redondo': 'Redondo',
+      'cuadrado': 'Quadrado',
+      'ovalado': 'Oval',
+      'corazon': 'Coração',
+      'diamante': 'Diamante',
+      'alargado': 'Alongado',
+      'other': '$shape',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String visagismoFrameDetail(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'aviador_ultra_fino_de_metal': 'Fio dourado clássico',
+      'aviador_de_acetato_clasico': 'Tartaruga',
+      'aviador_grueso_vanguardista': 'Acetato preto marcante',
+      'aviador_translucido_contemporaneo': 'Acetato champanhe',
+      'aviador_industrial_moderno': 'Titânio preto fosco e misto',
+      'other': '$id',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String visagismoFrameName(String id) {
+    String _temp0 = intl.Intl.selectLogic(id, {
+      'aviador_ultra_fino_de_metal': 'Aviador ultrafino de metal',
+      'aviador_de_acetato_clasico': 'Aviador de acetato clássico',
+      'aviador_grueso_vanguardista': 'Aviador grosso vanguardista',
+      'aviador_translucido_contemporaneo': 'Aviador translúcido contemporâneo',
+      'aviador_industrial_moderno': 'Aviador industrial moderno',
+      'cat_eye_ultra_fino_de_metal': 'Cat-eye ultrafino de metal',
+      'cat_eye_de_acetato_clasico': 'Cat-eye de acetato clássico',
+      'cat_eye_grueso_vanguardista': 'Cat-eye grosso vanguardista',
+      'cat_eye_translucido_contemporaneo': 'Cat-eye translúcido contemporâneo',
+      'cat_eye_doble_puente_industrial': 'Cat-eye ponte dupla industrial',
+      'rectangular_ultra_fino_de_metal': 'Retangular ultrafino de metal',
+      'cuadrado_de_acetato_clasico': 'Quadrado de acetato clássico',
+      'rectangular_grueso_vanguardista': 'Retangular grosso vanguardista',
+      'cuadrado_translucido_contemporaneo':
+          'Quadrado translúcido contemporâneo',
+      'doble_puente_industrial': 'Ponte dupla industrial',
+      'ovalado_ultra_fino_de_metal': 'Oval ultrafino de metal',
+      'ovalado_de_acetato_clasico': 'Oval de acetato clássico',
+      'ovalado_grueso_vanguardista': 'Oval grosso vanguardista',
+      'ovalado_translucido_contemporaneo': 'Oval translúcido contemporâneo',
+      'ovalado_doble_puente_industrial': 'Oval ponte dupla industrial',
+      'wayfarer_ultra_fino_de_metal': 'Wayfarer ultrafino de metal',
+      'wayfarer_de_acetato_clasico': 'Wayfarer de acetato clássico',
+      'wayfarer_grueso_vanguardista': 'Wayfarer grosso vanguardista',
+      'wayfarer_translucido_contemporaneo':
+          'Wayfarer translúcido contemporâneo',
+      'wayfarer_doble_puente_industrial': 'Wayfarer ponte dupla industrial',
+      'other': '$id',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get visagismoFrontCamera => 'Câmera frontal';
+
+  @override
+  String get visagismoIssueDetectorError =>
+      'Não foi possível analisar a foto: o detector de rostos falhou. Tente novamente; se continuar, avise o suporte (mantenha pressionada esta mensagem para ver o detalhe técnico).';
+
+  @override
+  String get visagismoIssueHeadTilted =>
+      'O queixo está muito para cima ou para baixo. Peça para olhar para a frente, na altura da câmera.';
+
+  @override
+  String get visagismoIssueHeadTurned =>
+      'O rosto está virado. Peça para olhar de frente para a câmera.';
+
+  @override
+  String get visagismoIssueNoFace => 'Nenhum rosto foi detectado na foto.';
+
+  @override
+  String get visagismoMatchGood => 'Muito bom';
+
+  @override
+  String get visagismoMatchIdeal => 'Ideal';
+
+  @override
+  String get visagismoMatchNotRecommended => 'Não recomendado';
+
+  @override
+  String get visagismoMatchPossible => 'Possível';
+
+  @override
+  String get visagismoNoCamera =>
+      'Nenhuma câmera disponível foi detectada neste dispositivo. O visagismo precisa de uma câmera para funcionar.';
+
+  @override
+  String get visagismoNoFrames => 'Ainda não há armações disponíveis.';
+
+  @override
+  String get visagismoOpenSettings => 'Abrir configurações';
+
+  @override
+  String get visagismoPhotoSaved => 'Foto salva na galeria interna';
+
+  @override
+  String visagismoPhotoSavedAndSent(String totem) {
+    return 'Foto salva e enviada ao Tótem ($totem)';
+  }
+
+  @override
+  String get visagismoPhotoSendFailed =>
+      'Foto salva na galeria · não foi possível enviá-la ao Tótem';
+
+  @override
+  String get visagismoRearCamera => 'Câmera traseira';
+
+  @override
+  String get visagismoRecenterFrame => 'Reposicionar a armação';
+
+  @override
+  String get visagismoRetake => 'Repetir';
+
+  @override
+  String get visagismoRetry => 'Tentar novamente';
+
+  @override
+  String get visagismoSaveWithFrame => 'Salvar com armação';
+
+  @override
+  String get visagismoSendWithFrame => 'Enviar com armação';
+
+  @override
+  String get visagismoTitle => 'Visagismo';
+
+  @override
+  String get visagismoTryOnSaveFailed =>
+      'Não foi possível salvar a foto com a armação';
+
+  @override
+  String visagismoTryOnSaved(String frame) {
+    return 'Foto com $frame salva na galeria';
+  }
+
+  @override
+  String visagismoTryOnSent(String frame) {
+    return 'Foto com $frame enviada ao Tótem';
+  }
 }
