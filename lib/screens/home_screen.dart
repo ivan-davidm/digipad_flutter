@@ -175,12 +175,12 @@ class _HomeScreenState extends State<HomeScreen>
             SafeArea(
               child: Stack(
                 children: [
-                  // ── DTCP logo on its oval backdrop, bottom-right. Long press
+                  // ── Minimal DTCP logo, bottom-right corner. Long press
                   //    opens the background settings (kept hidden so shop
                   //    customers don't change it).
                   Positioned(
-                    bottom: 24,
-                    right: 24,
+                    bottom: 12,
+                    right: 14,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onLongPress: () =>
@@ -289,26 +289,23 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // ── Logo with oval backdrop ──────────────────────────────────────────────
+  // ── Logo ──────────────────────────────────────────────────────────────────
 
   /// Space kept free above the arch for the TÓTEM badge and language picker.
   static const double _kMenuTopOffset = 64;
 
+  /// Minimal logo: no backdrop, smaller, white letters (logo_dtcp_light.png is
+  /// logo_dtcp.png with the black parts turned white, so it reads over the
+  /// dark video) — product request 2026-11-25.
   Widget _buildLogo(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.shortestSide >= 550;
-    final logoWidth = isTablet ? 260.0 : 160.0;
-    final logoHeight = logoWidth * (245 / 974);
+    final logoWidth = isTablet ? 190.0 : 120.0;
+    final logoHeight = logoWidth * (245 / 974); // logo is 974×245
 
-    return Container(
-      width: logoWidth * 1.35,
-      height: logoHeight * 2.2,
-      decoration: BoxDecoration(
-        color: Colors.white24,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      alignment: Alignment.center,
+    return Opacity(
+      opacity: 0.9,
       child: Image.asset(
-        'assets/images/logo_dtcp.png',
+        'assets/images/logo_dtcp_light.png',
         width: logoWidth,
         height: logoHeight,
         fit: BoxFit.contain,
