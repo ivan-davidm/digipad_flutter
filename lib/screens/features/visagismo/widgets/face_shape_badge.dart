@@ -1,22 +1,7 @@
 import 'package:digipad_flutter/screens/features/visagismo/logic/face_shape_classifier.dart';
+import 'package:digipad_flutter/l10n/arb/app_localizations.dart';
+import 'package:digipad_flutter/screens/features/visagismo/widgets/visagismo_labels.dart';
 import 'package:flutter/material.dart';
-
-String faceShapeLabel(FaceShape shape) {
-  switch (shape) {
-    case FaceShape.redondo:
-      return 'Redondo';
-    case FaceShape.cuadrado:
-      return 'Cuadrado';
-    case FaceShape.ovalado:
-      return 'Ovalado';
-    case FaceShape.corazon:
-      return 'Corazón';
-    case FaceShape.diamante:
-      return 'Diamante';
-    case FaceShape.alargado:
-      return 'Alargado';
-  }
-}
 
 /// Small reusable chip showing the detected face shape, used on both the
 /// live AR screen (as a live hint) and the result screen.
@@ -41,7 +26,7 @@ class FaceShapeBadge extends StatelessWidget {
           const Icon(Icons.face_retouching_natural, color: Colors.white, size: 16),
           const SizedBox(width: 8),
           Text(
-            '${faceShapeLabel(result.shape)} · $confidencePct%',
+            '${faceShapeName(AppLocalizations.of(context), result.shape)} · $confidencePct%',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 13,

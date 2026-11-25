@@ -1,8 +1,10 @@
 import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_cubit.dart';
 import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_state.dart';
+import 'package:digipad_flutter/screens/features/visagismo/data/visagismo_totem_link.dart';
 import 'package:digipad_flutter/screens/features/visagismo/presentation/visagismo_capture_screen.dart';
 import 'package:digipad_flutter/screens/features/visagismo/presentation/visagismo_result_screen.dart';
 import 'package:digipad_flutter/screens/features/visagismo/presentation/visagismo_scanning_overlay.dart';
+import 'package:digipad_flutter/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -10,7 +12,10 @@ import 'package:permission_handler/permission_handler.dart';
 /// Gating screen: checks camera availability before ever creating the
 /// camera preview.
 class VisagismoEntryScreen extends StatelessWidget {
-  const VisagismoEntryScreen({super.key});
+  const VisagismoEntryScreen({super.key, this.totemLink});
+
+  /// Link to a Tótem, when the host app has one (see [VisagismoTotemLink]).
+  final VisagismoTotemLink? totemLink;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +24,16 @@ class VisagismoEntryScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Visagismo'),
+        title: Text(AppLocalizations.of(context).visagismoTitle),
+        actions: [
+          // Tótem link + "Repetir", only while showing a result.
+          BlocBuilder<VisagismoCubit, VisagismoState>(
+            buildWhen: (p, c) => p.step != c.step,
+            builder: (context, state) => state.step == VisagismoStep.result
+                ? VisagismoResultActions(totemLink: totemLink)
+                : const SizedBox.shrink(),
+          ),
+        ],
       ),
       body: BlocBuilder<VisagismoCubit, VisagismoState>(
         builder: (context, state) {
@@ -37,7 +51,7 @@ class VisagismoEntryScreen extends StatelessWidget {
                 imagePath: state.capturedImagePath!,
               );
             case VisagismoStep.result:
-              return const VisagismoResultScreen();
+              return VisagismoResultScreen(totemLink: totemLink);
           }
         },
       ),
@@ -53,21 +67,19 @@ class _UnavailableView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<VisagismoCubit>();
+    final l10n = AppLocalizations.of(context);
 
     String message;
     Widget? action;
 
     if (state.cameraPermissionDenied) {
-      message = 'Esta función necesita permiso de cámara para funcionar. '
-          'Activalo en los ajustes del dispositivo.';
+      message = l10n.visagismoCameraPermissionBody;
       action = ElevatedButton(
         onPressed: () => openAppSettings(),
-        child: const Text('Abrir ajustes'),
+        child: Text(l10n.visagismoOpenSettings),
       );
     } else {
-      message = 'No se detectó ninguna cámara disponible en este '
-          'dispositivo. La prueba de visagismo necesita una cámara para '
-          'funcionar.';
+      message = l10n.visagismoNoCamera;
     }
 
     return Center(
@@ -90,7 +102,7 @@ class _UnavailableView extends StatelessWidget {
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => cubit.retryAvailabilityCheck(),
-              child: const Text('Reintentar'),
+              child: Text(l10n.visagismoRetry),
             ),
           ],
         ),

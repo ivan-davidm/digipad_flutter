@@ -3,6 +3,8 @@ import 'dart:ui' show Rect;
 
 import 'package:digipad_flutter/screens/features/visagismo/data/visagismo_catalog_repository.dart';
 import 'package:digipad_flutter/screens/features/visagismo/logic/face_measurements_from_mlkit.dart';
+import 'package:digipad_flutter/screens/features/visagismo/logic/face_shape_classifier.dart';
+import 'package:digipad_flutter/screens/features/visagismo/logic/frame_match.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
@@ -168,7 +170,7 @@ void main() {
     });
   });
 
-  group('rankFramesForTags', () {
+  group('frame match levels', () {
     FrameCatalogItem frame(String id, List<String> tags) => FrameCatalogItem(
       frameId: id,
       displayName: id,
@@ -178,33 +180,80 @@ void main() {
       thumbnailUrl: 'x',
     );
 
+    const shape = FaceShapeResult(
+      shape: FaceShape.redondo,
+      recommendedFrameTags: ['cuadrado', 'rectangular', 'cat_eye'],
+      avoidFrameTags: ['redondo_chico'],
+      confidence: 1,
+    );
+
     final catalog = [
-      frame('a_round', ['redondo']),
-      frame('b_square', ['cuadrado']),
-      frame('c_cat', ['cat_eye']),
-      frame('d_square2', ['cuadrado']),
-      frame('e_other', ['rimless']),
-      frame('f_multi', ['cat_eye', 'cuadrado']),
+      frame('a_round_small', ['ovalado', 'redondo_chico']),
+      frame('b_cat', ['cat_eye']),
+      frame('c_square', ['cuadrado']),
+      frame('d_other', ['rimless']),
+      frame('e_rect', ['rectangular']),
+      frame('f_square2', ['cuadrado', 'oversize']),
+      frame('g_square_avoided', ['cuadrado', 'redondo_chico']),
     ];
 
-    test('orders by the recommended tag ranking, best fit first', () {
-      final ids = rankFramesForTags(catalog, ['cuadrado', 'cat_eye'])
-          .map((f) => f.frameId)
-          .toList();
-      // 'cuadrado' (rank 0): b, d, f(multi: best tag is cuadrado) in catalog
-      // order; then 'cat_eye' (rank 1): c.
-      expect(ids, ['b_square', 'd_square2', 'f_multi', 'c_cat']);
+    test('top recommendation = ideal, other recommended = good, '
+        'neither = possible, avoided = not recommended', () {
+      FrameMatchLevel level(String id) =>
+          frameMatchLevel(catalog.firstWhere((f) => f.frameId == id), shape);
+      expect(level('c_square'), FrameMatchLevel.ideal);
+      expect(level('e_rect'), FrameMatchLevel.good);
+      expect(level('b_cat'), FrameMatchLevel.good);
+      expect(level('d_other'), FrameMatchLevel.possible);
+      expect(level('a_round_small'), FrameMatchLevel.notRecommended);
+      // "avoid" wins even over the top recommendation
+      expect(level('g_square_avoided'), FrameMatchLevel.notRecommended);
     });
 
-    test('drops frames without any matching tag', () {
-      final ids = rankFramesForTags(catalog, ['rimless'])
-          .map((f) => f.frameId)
-          .toList();
-      expect(ids, ['e_other']);
+    test('every frame is kept, best first; ties keep the catalog order', () {
+      final ranked = rankFramesByMatch(catalog, shape);
+      expect(ranked.map((r) => r.item.frameId), [
+        'c_square', 'f_square2', // ideal
+        'e_rect', 'b_cat', // good: rectangular (rank 1) before cat_eye (2)
+        'd_other', // possible
+        // not recommended: the one that also has the top style first
+        'g_square_avoided', 'a_round_small',
+      ]);
     });
 
-    test('no matches → empty', () {
-      expect(rankFramesForTags(catalog, ['nope']), isEmpty);
+    test('no classification → catalog order, no levels', () {
+      final ranked = rankFramesByMatch(catalog, null);
+      expect(ranked.map((r) => r.item.frameId), catalog.map((f) => f.frameId));
+      expect(ranked.every((r) => r.level == null), isTrue);
+    });
+  });
+
+  group('glassesAnchorFromFace', () {
+    // fakeFace: eyes 120 px apart, 50 px above the centre; the ellipse is
+    // ≈ 295 px wide around that line.
+    test('level face: eye midpoint, eye distance and face width', () {
+      final a = glassesAnchorFromFace(fakeFace())!;
+      expect(a.eyeCenterX, closeTo(500, 1));
+      expect(a.eyeCenterY, closeTo(450, 1));
+      expect(a.eyeDistance, closeTo(120, 1));
+      expect(a.rollRad, closeTo(0, 0.01));
+      expect(a.faceWidthAtEyes, closeTo(295, 8));
+    });
+
+    test('tilted face: roll follows the eye line, width is measured level', () {
+      final a = glassesAnchorFromFace(fakeFace(rollRad: 0.2))!;
+      expect(a.rollRad, closeTo(0.2, 0.02));
+      expect(a.eyeDistance, closeTo(120, 2));
+      expect(a.faceWidthAtEyes, closeTo(295, 10));
+    });
+
+    test('no eyes → no anchor', () {
+      expect(glassesAnchorFromFace(fakeFace(withEyes: false)), isNull);
+    });
+
+    test('analyzeFaces carries the anchor, even for a rejected pose', () {
+      expect(analyzeFaces([fakeFace()]).glasses, isNotNull);
+      expect(analyzeFaces([fakeFace(yaw: 40)]).glasses, isNotNull);
     });
   });
 }

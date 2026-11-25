@@ -1,8 +1,7 @@
-import 'dart:math' as math;
-
 import 'package:camera/camera.dart';
 import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_cubit.dart';
 import 'package:digipad_flutter/screens/features/visagismo/presentation/visagismo_frame_guide.dart';
+import 'package:digipad_flutter/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -26,6 +25,9 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
     with WidgetsBindingObserver {
   CameraController? _controller;
   CameraLensDirection _direction = CameraLensDirection.back;
+
+  /// The opened camera is an external one (USB webcam, e.g. on a Tótem).
+  bool _isExternal = false;
   bool _canFlip = false;
   bool _isInitializing = true;
   bool _isCapturing = false;
@@ -58,6 +60,7 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
       _direction = camera.lensDirection == CameraLensDirection.front
           ? CameraLensDirection.front
           : CameraLensDirection.back;
+      _isExternal = camera.lensDirection == CameraLensDirection.external;
       _canFlip = hasFront && hasBack;
       final controller = CameraController(
         camera,
@@ -77,7 +80,7 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
     } catch (_) {
       if (mounted) {
         setState(() {
-          _error = 'No se pudo iniciar la cámara.';
+          _error = AppLocalizations.of(context).visagismoCameraStartFailed;
           _isInitializing = false;
         });
       }
@@ -121,7 +124,7 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
         setState(() => _isCapturing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Error al tomar la foto. Probá de nuevo.'),
+            content: Text(AppLocalizations.of(context).visagismoCaptureFailed),
             backgroundColor: Colors.red.shade700,
           ),
         );
@@ -157,8 +160,8 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
               shape: const CircleBorder(side: BorderSide(color: Colors.white24)),
               child: IconButton(
                 tooltip: _direction == CameraLensDirection.back
-                    ? 'Cámara frontal'
-                    : 'Cámara trasera',
+                    ? AppLocalizations.of(context).visagismoFrontCamera
+                    : AppLocalizations.of(context).visagismoRearCamera,
                 icon: const Icon(Icons.flip_camera_android_rounded,
                     color: Colors.white),
                 onPressed: _flipCamera,
@@ -204,7 +207,7 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _initCamera,
-                child: const Text('Reintentar'),
+                child: Text(AppLocalizations.of(context).visagismoRetry),
               ),
             ],
           ),
@@ -217,25 +220,30 @@ class _VisagismoCaptureScreenState extends State<VisagismoCaptureScreen>
         child: CircularProgressIndicator(color: Colors.deepPurpleAccent),
       );
     }
-    // Front camera preview feels wrong unmirrored — users expect a selfie
-    // mirror, like every other camera app's front-facing preview. The rear
-    // camera shows the scene as it is.
-    return Transform(
-      alignment: Alignment.center,
-      transform: _direction == CameraLensDirection.front
-          ? Matrix4.rotationY(math.pi)
-          : Matrix4.identity(),
-      child: SizedBox.expand(
-        child: FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: controller.value.previewSize!.height,
-            height: controller.value.previewSize!.width,
-            child: CameraPreview(controller),
-          ),
+    // No extra flip for the built-in cameras: the camera plugin ALREADY
+    // mirrors the front camera's preview (selfie mirror; camera_android_camerax
+    // does it in `ImageReaderRotatedPreview`, the SurfaceTexture path
+    // natively). Flipping it again — as this screen used to — undid the
+    // mirror, so a hand moving the phone "like for a selfie" sent the face the
+    // other way (field reports 2026-11-25). The rear camera shows the scene as
+    // it is.
+    //
+    // An EXTERNAL camera (USB webcam on a Tótem) faces the client like a
+    // selfie camera, but the plugin does not mirror it — so we do (product
+    // decision 2026-11-25). Only the preview: the photo is analysed and saved
+    // as captured, like the front camera's.
+    final preview = SizedBox.expand(
+      child: FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: controller.value.previewSize!.height,
+          height: controller.value.previewSize!.width,
+          child: CameraPreview(controller),
         ),
       ),
     );
+    if (!_isExternal) return preview;
+    return Transform.flip(flipX: true, child: preview);
   }
 }
 

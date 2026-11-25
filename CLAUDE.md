@@ -1,6 +1,6 @@
 # DigiTower 3D Premium (`digipad_flutter`) — Agent Context
 
-> Sibling repo: [`../digipad_totem`](../digipad_totem/CLAUDE.md) — **DigiTower 3D Remote Control** ("Totem Connect"), the operator-phone companion app that sends photos to this app. Several modules are **copied** between the two repos and have diverged (see "Photo Sync" and "Visagismo").
+> Sibling repo: [`../digipad_totem`](../digipad_totem/CLAUDE.md) — **DigiTower 3D Remote Control** ("Totem Connect"), the operator-phone companion app that sends photos to this app. Several modules are **copied** between the two repos: Photo Sync has diverged; **Visagismo is shared code** (see "Visagismo").
 > This app was formerly called **DigiPad**; the repo/package names (`digipad_flutter`, `ar.com.digipad`) still use the old name.
 
 ## What this is
@@ -41,7 +41,7 @@ main.dart
 | `simulations` | `MainSimulationsGridScreen` → `SimulationViewerScreen` | Scenario-based lens demos (myopia, monofocal, multifocal, bifocal, photochromic, polarized, blue filter, …). Data in `simulations/data/simulation_data.dart` (~1.7k lines) + images in `assets/images/simulations/` |
 | `lenses_3d` | `Lenses3DScreen` | Lens image viewer, assets in `assets/images/lenses_3d/` |
 | `measurements` | `MeasurementHubScreen` | The core feature — see below |
-| `visagismo` | `VisagismoEntryScreen` | Face-shape detection (ML Kit) + frame suggestions |
+| `visagismo` | `VisagismoEntryScreen` | Face-shape detection (ML Kit), real frames ranked by match, try-on on the photo |
 | `visual_health` | `VisualHealthScreen` | Vision test charts/images |
 | `photo_sync` | `PhotoSyncRoleScreen` | Tótem host role — see "Photo Sync" |
 
@@ -106,23 +106,21 @@ Received files are written under `<documents>/totem_received/` and registered in
 
 ## Visagismo — `lib/screens/features/visagismo/`
 
-**Rear camera first** (the operator aims it at the client and sees the screen); a flip button switches to the front camera when the device has both. The front preview is mirrored, the rear one is not. Flow: capture → `google_mlkit_face_detection` (contours + eye landmarks, accurate mode) → `analyzeFaces()` in `logic/face_measurements_from_mlkit.dart` → `classifyFaceShape()` (`FaceShape`: redondo, cuadrado, ovalado, corazón, diamante, alargado) → frames ranked by `rankFramesForTags()`.
+**Shared module (since 2026-11-25): the SAME code as `../digipad_totem/lib/features/visagismo/`** — only the package prefix in the imports differs (`digipad_flutter/screens/features/…` ↔ `digipad_totem/features/…`). Tests are shared the same way (`test/screens/features/visagismo/`). Change one → copy it to the other with that rename. Everything app-specific stays outside the module:
+- **Tótem link** — `data/visagismo_totem_link.dart` is an interface the host app may pass to `VisagismoEntryScreen(totemLink: …)`. The Remote Control passes its own (`ClientTotemLink`, over its `ClientCubit`) to send photos to the Tótem. **This app runs on the Tótem, so it passes nothing**: the result screen then only saves to the local gallery and hides every Tótem control.
+- **Translations** — every key the module uses starts with `visagismo` (50 keys: texts, frame names `visagismoFrameName`/`visagismoFrameDetail` by `frameId`, face shapes, match levels, diagnostics). Keep them identical in both repos' ARB files.
 
-What `analyzeFaces()` does (all unit-tested in `test/screens/features/visagismo/face_analysis_test.dart` with synthetic faces):
-- Picks the **largest** detected face (not `faces.first`).
-- **Rejects** photos with head yaw or pitch above `kMaxHeadYawDeg` / `kMaxHeadPitchDeg` (20°) with a specific message (`FaceCaptureIssue.headTurned` / `headTilted` / `noFace`).
-- **Levels in-plane tilt (roll)** by rotating the contour so the eye line is horizontal (uses the eye landmarks, not ML Kit's roll sign).
-- Frames are ordered best-fit first (the recommended tags come ranked); frames with no matching tag are dropped. `avoidFrameTags` are not used.
+**Camera:** rear first (the operator aims it), flip button when the device has front + rear. `VisagismoCubit` counts ANY camera as available — including one Android reports as **external (USB)**, which matters on Tótem hardware — and shows the "no camera" message only when there is none; the capture screen falls back to the first camera when the requested side doesn't exist. **No extra mirroring**: the camera plugin already mirrors the front preview; flipping it again (as this screen used to) made the selfie view move the wrong way (field reports 2026-11-25). An **external (USB) camera** faces the client like a selfie camera but the plugin doesn't mirror it, so the capture screen mirrors its preview itself (product decision 2026-11-25; only the preview — the photo is analysed and saved as captured).
 
-**Debug panel:** long press on the result card opens the raw numbers (ratios, jaw angle, head pose, why a photo failed). Hidden from customers on purpose.
+Flow: capture → `google_mlkit_face_detection` (contours + eye landmarks, accurate mode) → `analyzeFaces()` (`logic/face_measurements_from_mlkit.dart`): largest face; rejects yaw/pitch > 20° (`FaceCaptureIssue.headTurned` / `headTilted` / `noFace`, detector failures as `detectorError`); levels roll with the eye line; also returns `GlassesAnchor` (eye centres + face width at eye level) → `classifyFaceShape()` (`FaceShape`: redondo, cuadrado, ovalado, corazón, diamante, alargado; round/square thresholds tuned so a beard doesn't make a round jaw read square).
 
-**Known limits — read before tuning:**
-- ML Kit's face contour reaches mid-forehead, **not the hairline**, but the classifier's docs assume hairline→chin. This inflates width/height. No correction is applied because it can't be validated without reference photos; the classifier thresholds (`_k…` constants) also come from the old ARCore mesh version and are **not validated against real faces**. When reference photos exist, tune them using the debug panel.
-- Calibration is by pixels on the contour, not millimetres.
+**Frames:** `data/bundled_frame_catalog.dart` — 25 real front-view frames (`assets/images/visagismo/frames/`, transparent background and lenses, 5 styles × 5 finishes, cut from the client's "Armazones Reales Transparentes" sheets). `logic/frame_match.dart` shows **every** frame, best first, colour-coded on its card: green ideal (top recommended tag) / yellow good (other recommended) / orange possible / red not recommended (an `avoidFrameTags` match). Frames carry descriptive tags (anguloso, browline_pesado, bajo, …) so the red level can trigger. Real/Firestore catalog later: `fetchCatalog()` keeps its signature; `firestore.rules` already reserves `frame_catalog` and `opticas/{id}/entitlements`.
 
-**The frame catalog is a mock**: `VisagismoCatalogRepository.fetchCatalog()` returns `kMockFrameCatalog` (27 items, 12 distinct tags). Each item shows the generic illustration for its **first shape tag**: `assets/images/visagismo/frames/<tag>.png` — 12 original vector drawings in one style (transparent PNG, 1200×800, dark frame + light lens tint, designed for the white thumbnail box), so there is nothing to license or attribute. They are **generated**: edit the specs in `tool/generate_frame_illustrations.dart` and run `flutter test tool/generate_frame_illustrations.dart` (it needs the Flutter engine; set `FRAME_SHEET_PATH=/some/file.png` to also get a contact sheet), then copy the PNGs to `digipad_totem/assets/images/visagismo/frames/`. `test/screens/features/visagismo/frame_catalog_test.dart` checks every thumbnail exists and every face shape gets suggestions. The older CC BY-SA product photo was removed. The method signature is meant to stay when it switches to a real/Firestore catalog; `firestore.rules` already reserves `frame_catalog` and `opticas/{id}/entitlements` as read-only for clients (premium vs generic frame tiers).
+**Try-on on the captured photo:** the best frame is drawn over the eyes right away (`widgets/glasses_try_on_view.dart`). `logic/frame_lens_detector.dart` finds each picture's two lens holes (transparent areas enclosed by the frame) — no per-frame measurements — and `logic/glasses_fit.dart` puts the lens centres over the eyes, 6 % wider than the pupils, following the head tilt, sanity-clamped against the eye distance. Drag / pinch / twist adjusts it; "Guardar con marco" exports the same painting at full photo resolution (PNG in `<app documents>/visagismo/`) to the gallery. Captures are copied there too (the gallery stores paths; the camera's temp file is deleted on "Repetir").
 
-The logic files are duplicated in `digipad_totem` (`cubit`, `logic`, `data`, capture/entry screens and the debug sheet are kept identical; the result screen and frame list differ). Change one → mirror it.
+**Result screen:** app bar = (Tótem link when there is one) + "Repetir" icon; snackbars for saved/sent; long press on the face-shape badge opens the hidden debug panel (raw ratios, head pose, why a photo failed). Frame cards are bigger on screens with shortestSide ≥ 600 (tablets, Tótem).
+
+**Known limits — read before tuning:** ML Kit's contour reaches mid-forehead, not the hairline (inflates width/height); thresholds are pixel-based and **not validated against reference faces** — tune with the debug panel. Not verified on a device: the try-on placement and frame size on real faces.
 
 ## Hidden / flagged-off features
 
@@ -178,7 +176,7 @@ flutter build ios --release
 flutter gen-l10n             # l10n.yaml: arb-dir lib/l10n/arb, template app_en.arb, class AppLocalizations
 ```
 
-Tests (`test/`): `activation_device_collision_test`, `screens/features/visagismo/face_shape_classifier_test`, `screens/features/measurements/optical_lens_mirror_test`, `screens/home/home_background_controller_test`. **`test/widget_test.dart` is the untouched Flutter "Counter" template from the first commit and always fails** (this app has no counter and `MyApp` needs Firebase) — ignore it or delete it, don't "fix" the app for it.
+Tests (`test/`): `activation_device_collision_test`, `screens/features/visagismo/{face_shape_classifier,face_analysis,frame_catalog,glasses_fit}_test`, `screens/features/measurements/optical_lens_mirror_test`, `screens/home/home_background_controller_test`. **`test/widget_test.dart` is the untouched Flutter "Counter" template from the first commit and always fails** (this app has no counter and `MyApp` needs Firebase) — ignore it or delete it, don't "fix" the app for it.
 
 Strings: `context.l10n.someKey` (extension in `lib/l10n/l10n.dart`). Add every key to **all three** ARB files (`app_en.arb` is the template). The old docs mention `intl_utils:generate` — this repo uses Flutter's built-in `gen-l10n` (`flutter: generate: true`).
 

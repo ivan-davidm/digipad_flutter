@@ -1,4 +1,6 @@
 import 'package:digipad_flutter/screens/features/visagismo/logic/face_measurements_from_mlkit.dart';
+import 'package:digipad_flutter/l10n/arb/app_localizations.dart';
+import 'package:digipad_flutter/screens/features/visagismo/widgets/visagismo_labels.dart';
 import 'package:flutter/material.dart';
 
 /// Hidden diagnostics for the optician: the raw numbers behind a face-shape
@@ -33,21 +35,22 @@ class _FaceAnalysisDebugSheet extends StatelessWidget {
     String f(double? v, {int digits = 2, String unit = ''}) =>
         v == null ? '—' : '${v.toStringAsFixed(digits)}$unit';
 
+    final l10n = AppLocalizations.of(context);
     final rows = <(String, String)>[
-      if (a?.issue != null) ('Problema', a!.issue!.name),
-      if (a?.errorDetail != null) ('Error del detector', a!.errorDetail!),
-      if (shape != null) ('Forma', shape.shape.name),
-      if (shape != null) ('Confianza', f(shape.confidence)),
-      ('Giro de cabeza (yaw)', f(a?.yawDeg, digits: 1, unit: '°')),
-      ('Cabeceo (pitch)', f(a?.pitchDeg, digits: 1, unit: '°')),
-      ('Inclinación (roll)', f(a?.rollDeg, digits: 1, unit: '°')),
+      if (a?.issue != null) (l10n.visagismoDiagIssue, a!.issue!.name),
+      if (a?.errorDetail != null) (l10n.visagismoDiagDetectorError, a!.errorDetail!),
+      if (shape != null) (l10n.visagismoDiagShape, faceShapeName(l10n, shape.shape)),
+      if (shape != null) (l10n.visagismoDiagConfidence, f(shape.confidence)),
+      (l10n.visagismoDiagYaw, f(a?.yawDeg, digits: 1, unit: '°')),
+      (l10n.visagismoDiagPitch, f(a?.pitchDeg, digits: 1, unit: '°')),
+      (l10n.visagismoDiagRoll, f(a?.rollDeg, digits: 1, unit: '°')),
       if (m != null) ...[
-        ('Ancho / alto', f(m.faceWidthMm / m.faceHeightMm)),
-        ('Mandíbula / pómulos', f(m.jawWidthMm / m.faceWidthMm)),
-        ('Frente / pómulos', f(m.foreheadWidthMm / m.faceWidthMm)),
-        ('Ángulo de mandíbula', f(m.jawAngleDeg, digits: 1, unit: '°')),
-        ('Mentón (0 romo – 1 puntiagudo)', f(m.chinSharpness)),
-        ('Ancho / alto (px)',
+        (l10n.visagismoDiagWidthHeight, f(m.faceWidthMm / m.faceHeightMm)),
+        (l10n.visagismoDiagJawCheek, f(m.jawWidthMm / m.faceWidthMm)),
+        (l10n.visagismoDiagForeheadCheek, f(m.foreheadWidthMm / m.faceWidthMm)),
+        (l10n.visagismoDiagJawAngle, f(m.jawAngleDeg, digits: 1, unit: '°')),
+        (l10n.visagismoDiagChin, f(m.chinSharpness)),
+        (l10n.visagismoDiagWidthHeightPx,
             '${m.faceWidthMm.toStringAsFixed(0)} × ${m.faceHeightMm.toStringAsFixed(0)}'),
       ],
     ];
@@ -70,9 +73,9 @@ class _FaceAnalysisDebugSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'Mediciones (diagnóstico)',
-              style: TextStyle(
+            Text(
+              l10n.visagismoDiagTitle,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -80,9 +83,9 @@ class _FaceAnalysisDebugSheet extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             if (a == null)
-              const Text(
-                'Sin datos de la última foto.',
-                style: TextStyle(color: Colors.white54),
+              Text(
+                l10n.visagismoDiagNoData,
+                style: const TextStyle(color: Colors.white54),
               )
             else
               for (final (label, value) in rows)
@@ -110,12 +113,9 @@ class _FaceAnalysisDebugSheet extends StatelessWidget {
                   ),
                 ),
             const SizedBox(height: 10),
-            const Text(
-              'Las proporciones se calculan en píxeles sobre el contorno de '
-              'ML Kit, que llega a media frente (no a la línea del pelo). '
-              'Los umbrales del clasificador aún no están validados contra '
-              'rostros de referencia.',
-              style: TextStyle(color: Colors.white38, fontSize: 11.5),
+            Text(
+              l10n.visagismoDiagFootnote,
+              style: const TextStyle(color: Colors.white38, fontSize: 11.5),
             ),
           ],
         ),

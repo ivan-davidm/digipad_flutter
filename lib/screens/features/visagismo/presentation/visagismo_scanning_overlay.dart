@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:digipad_flutter/l10n/arb/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import 'visagismo_frame_guide.dart';
@@ -88,14 +89,14 @@ class _VisagismoScanningOverlayState extends State<VisagismoScanningOverlay>
             );
           },
         ),
-        const Positioned(
+        Positioned(
           bottom: 56,
           left: 0,
           right: 0,
           child: Center(
             child: Text(
-              'Analizando rostro…',
-              style: TextStyle(
+              AppLocalizations.of(context).visagismoAnalyzing,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
                 fontSize: 16,

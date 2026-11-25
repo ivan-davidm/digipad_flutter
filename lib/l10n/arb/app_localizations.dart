@@ -1995,6 +1995,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy A to B'**
   String get copyAtoB;
+
+  /// No description provided for @visagismoAnalyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing face…'**
+  String get visagismoAnalyzing;
+
+  /// No description provided for @visagismoCameraPermissionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This feature needs camera permission to work. Turn it on in the device settings.'**
+  String get visagismoCameraPermissionBody;
+
+  /// No description provided for @visagismoCameraStartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera could not be started.'**
+  String get visagismoCameraStartFailed;
+
+  /// No description provided for @visagismoCaptureFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not take the photo. Try again.'**
+  String get visagismoCaptureFailed;
+
+  /// No description provided for @visagismoConnectToTotem.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the Totem'**
+  String get visagismoConnectToTotem;
+
+  /// No description provided for @visagismoConnectedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected to the Totem ({totem})'**
+  String visagismoConnectedTo(String totem);
+
+  /// No description provided for @visagismoDiagChin.
+  ///
+  /// In en, this message translates to:
+  /// **'Chin (0 blunt – 1 pointed)'**
+  String get visagismoDiagChin;
+
+  /// No description provided for @visagismoDiagConfidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Confidence'**
+  String get visagismoDiagConfidence;
+
+  /// No description provided for @visagismoDiagDetectorError.
+  ///
+  /// In en, this message translates to:
+  /// **'Detector error'**
+  String get visagismoDiagDetectorError;
+
+  /// No description provided for @visagismoDiagFootnote.
+  ///
+  /// In en, this message translates to:
+  /// **'Proportions are measured in pixels on the ML Kit contour, which reaches mid-forehead (not the hairline). The classifier thresholds are not yet validated against reference faces.'**
+  String get visagismoDiagFootnote;
+
+  /// No description provided for @visagismoDiagForeheadCheek.
+  ///
+  /// In en, this message translates to:
+  /// **'Forehead / cheekbones'**
+  String get visagismoDiagForeheadCheek;
+
+  /// No description provided for @visagismoDiagIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Problem'**
+  String get visagismoDiagIssue;
+
+  /// No description provided for @visagismoDiagJawAngle.
+  ///
+  /// In en, this message translates to:
+  /// **'Jaw angle'**
+  String get visagismoDiagJawAngle;
+
+  /// No description provided for @visagismoDiagJawCheek.
+  ///
+  /// In en, this message translates to:
+  /// **'Jaw / cheekbones'**
+  String get visagismoDiagJawCheek;
+
+  /// No description provided for @visagismoDiagNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data from the last photo.'**
+  String get visagismoDiagNoData;
+
+  /// No description provided for @visagismoDiagPitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Nod (pitch)'**
+  String get visagismoDiagPitch;
+
+  /// No description provided for @visagismoDiagRoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Tilt (roll)'**
+  String get visagismoDiagRoll;
+
+  /// No description provided for @visagismoDiagShape.
+  ///
+  /// In en, this message translates to:
+  /// **'Shape'**
+  String get visagismoDiagShape;
+
+  /// No description provided for @visagismoDiagTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurements (diagnostics)'**
+  String get visagismoDiagTitle;
+
+  /// No description provided for @visagismoDiagWidthHeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Width / height'**
+  String get visagismoDiagWidthHeight;
+
+  /// No description provided for @visagismoDiagWidthHeightPx.
+  ///
+  /// In en, this message translates to:
+  /// **'Width / height (px)'**
+  String get visagismoDiagWidthHeightPx;
+
+  /// No description provided for @visagismoDiagYaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Head turn (yaw)'**
+  String get visagismoDiagYaw;
+
+  /// Face shape from the classifier (FaceShape enum name).
+  ///
+  /// In en, this message translates to:
+  /// **'{shape, select, redondo{Round} cuadrado{Square} ovalado{Oval} corazon{Heart} diamante{Diamond} alargado{Oblong} other{{shape}}}'**
+  String visagismoFaceShapeName(String shape);
+
+  /// Material/finish line of a bundled frame by its frameId; unknown ids fall back to the id.
+  ///
+  /// In en, this message translates to:
+  /// **'{id, select, aviador_ultra_fino_de_metal{Classic gold wire} aviador_de_acetato_clasico{Tortoiseshell} aviador_grueso_vanguardista{Bold black acetate} aviador_translucido_contemporaneo{Champagne acetate} aviador_industrial_moderno{Matte black titanium, mixed} other{{id}}}'**
+  String visagismoFrameDetail(String id);
+
+  /// Name of a bundled frame by its frameId; unknown ids fall back to the id (the UI then shows the catalog name).
+  ///
+  /// In en, this message translates to:
+  /// **'{id, select, aviador_ultra_fino_de_metal{Ultra-thin metal aviator} aviador_de_acetato_clasico{Classic acetate aviator} aviador_grueso_vanguardista{Bold avant-garde aviator} aviador_translucido_contemporaneo{Contemporary translucent aviator} aviador_industrial_moderno{Modern industrial aviator} cat_eye_ultra_fino_de_metal{Ultra-thin metal cat-eye} cat_eye_de_acetato_clasico{Classic acetate cat-eye} cat_eye_grueso_vanguardista{Bold avant-garde cat-eye} cat_eye_translucido_contemporaneo{Contemporary translucent cat-eye} cat_eye_doble_puente_industrial{Industrial double-bridge cat-eye} rectangular_ultra_fino_de_metal{Ultra-thin metal rectangular} cuadrado_de_acetato_clasico{Classic acetate square} rectangular_grueso_vanguardista{Bold avant-garde rectangular} cuadrado_translucido_contemporaneo{Contemporary translucent square} doble_puente_industrial{Industrial double bridge} ovalado_ultra_fino_de_metal{Ultra-thin metal oval} ovalado_de_acetato_clasico{Classic acetate oval} ovalado_grueso_vanguardista{Bold avant-garde oval} ovalado_translucido_contemporaneo{Contemporary translucent oval} ovalado_doble_puente_industrial{Industrial double-bridge oval} wayfarer_ultra_fino_de_metal{Ultra-thin metal wayfarer} wayfarer_de_acetato_clasico{Classic acetate wayfarer} wayfarer_grueso_vanguardista{Bold avant-garde wayfarer} wayfarer_translucido_contemporaneo{Contemporary translucent wayfarer} wayfarer_doble_puente_industrial{Industrial double-bridge wayfarer} other{{id}}}'**
+  String visagismoFrameName(String id);
+
+  /// No description provided for @visagismoFrontCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Front camera'**
+  String get visagismoFrontCamera;
+
+  /// No description provided for @visagismoIssueDetectorError.
+  ///
+  /// In en, this message translates to:
+  /// **'The photo could not be analyzed: the face detector failed. Try again; if it keeps happening, contact support (long-press this message to see the technical detail).'**
+  String get visagismoIssueDetectorError;
+
+  /// No description provided for @visagismoIssueHeadTilted.
+  ///
+  /// In en, this message translates to:
+  /// **'The chin is too high or too low. Ask them to look straight ahead, at camera height.'**
+  String get visagismoIssueHeadTilted;
+
+  /// No description provided for @visagismoIssueHeadTurned.
+  ///
+  /// In en, this message translates to:
+  /// **'The face is turned. Ask them to look straight at the camera.'**
+  String get visagismoIssueHeadTurned;
+
+  /// No description provided for @visagismoIssueNoFace.
+  ///
+  /// In en, this message translates to:
+  /// **'No face was detected in the photo.'**
+  String get visagismoIssueNoFace;
+
+  /// No description provided for @visagismoMatchGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Very good'**
+  String get visagismoMatchGood;
+
+  /// No description provided for @visagismoMatchIdeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Ideal'**
+  String get visagismoMatchIdeal;
+
+  /// No description provided for @visagismoMatchNotRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recommended'**
+  String get visagismoMatchNotRecommended;
+
+  /// No description provided for @visagismoMatchPossible.
+  ///
+  /// In en, this message translates to:
+  /// **'Possible'**
+  String get visagismoMatchPossible;
+
+  /// No description provided for @visagismoNoCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'No camera was found on this device. The face shape analysis needs a camera to work.'**
+  String get visagismoNoCamera;
+
+  /// No description provided for @visagismoNoFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'No frames available yet.'**
+  String get visagismoNoFrames;
+
+  /// No description provided for @visagismoOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get visagismoOpenSettings;
+
+  /// No description provided for @visagismoPhotoSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo saved to the internal gallery'**
+  String get visagismoPhotoSaved;
+
+  /// No description provided for @visagismoPhotoSavedAndSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo saved and sent to the Totem ({totem})'**
+  String visagismoPhotoSavedAndSent(String totem);
+
+  /// No description provided for @visagismoPhotoSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo saved to the gallery · could not send it to the Totem'**
+  String get visagismoPhotoSendFailed;
+
+  /// No description provided for @visagismoRearCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Rear camera'**
+  String get visagismoRearCamera;
+
+  /// No description provided for @visagismoRecenterFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-center the frame'**
+  String get visagismoRecenterFrame;
+
+  /// No description provided for @visagismoRetake.
+  ///
+  /// In en, this message translates to:
+  /// **'Retake'**
+  String get visagismoRetake;
+
+  /// No description provided for @visagismoRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get visagismoRetry;
+
+  /// No description provided for @visagismoSaveWithFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Save with frame'**
+  String get visagismoSaveWithFrame;
+
+  /// No description provided for @visagismoSendWithFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Send with frame'**
+  String get visagismoSendWithFrame;
+
+  /// No description provided for @visagismoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Face shape'**
+  String get visagismoTitle;
+
+  /// No description provided for @visagismoTryOnSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the photo with the frame'**
+  String get visagismoTryOnSaveFailed;
+
+  /// No description provided for @visagismoTryOnSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo with {frame} saved to the gallery'**
+  String visagismoTryOnSaved(String frame);
+
+  /// No description provided for @visagismoTryOnSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo with {frame} sent to the Totem'**
+  String visagismoTryOnSent(String frame);
 }
 
 class _AppLocalizationsDelegate

@@ -1,4 +1,4 @@
-import 'mock_frame_catalog.dart';
+import 'bundled_frame_catalog.dart';
 
 class FrameCatalogItem {
   final String frameId;
@@ -12,6 +12,9 @@ class FrameCatalogItem {
   /// based on which. Mock data always uses an asset path.
   final String thumbnailUrl;
 
+  /// Optional second line under the name (material / finish).
+  final String? detail;
+
   const FrameCatalogItem({
     required this.frameId,
     required this.displayName,
@@ -19,70 +22,30 @@ class FrameCatalogItem {
     required this.tier,
     required this.shapeTags,
     required this.thumbnailUrl,
+    this.detail,
   });
 
   bool get isGeneric => tier == 'generic';
 }
 
-/// Resolves which frames to suggest for a classified face shape.
+/// Source of the frames shown by the visagismo.
 ///
-/// `fetchCatalog()` currently returns [kMockFrameCatalog] — a hardcoded
-/// placeholder list (see that file's doc comment), standing in until each
-/// óptica can upload its own real catalog. The method signature is final:
-/// swapping the body to a real Firestore/local-catalog read later doesn't
-/// change any call site in the cubit or UI, which already treat the catalog
-/// as "whatever list comes back."
+/// `fetchCatalog()` currently returns [kBundledFrameCatalog] — the real frames
+/// bundled with the app (see that file's doc comment) — until each óptica can
+/// upload its own catalog (this app has no backend of its own to read one
+/// from yet, unlike `digipad`'s Firestore-backed history for this same
+/// class). The method signature is final: swapping the body to a real read
+/// later doesn't change any call site in the cubit or UI. How each frame
+/// matches a face lives in `logic/frame_match.dart`.
 class VisagismoCatalogRepository {
   Future<List<FrameCatalogItem>> fetchCatalog() async {
-    return kMockFrameCatalog;
+    return kBundledFrameCatalog;
   }
 
-  List<FrameCatalogItem> filterByShapeTags(
-    List<FrameCatalogItem> catalog,
-    List<String> shapeTags,
-  ) => rankFramesForTags(catalog, shapeTags);
-
-  /// Entitlement resolution is a deliberate stub for this phase: there is no
-  /// purchasing/entitlement UI yet, so every account sees only the generic
-  /// tier. Kept as a method (rather than inlined into `isGeneric` checks) so
-  /// wiring the real `opticas/{opticaId}/entitlements` read later only
-  /// changes this method's body.
   Future<bool> isFrameUnlockedForCurrentOptica(
     String frameId,
     String tier,
   ) async {
-    if (tier == 'generic') return true;
-    return false;
+    return tier == 'generic';
   }
-}
-
-/// Frames that match any of [recommendedTags], best fit first.
-///
-/// `recommendedTags` comes ranked from the classifier (best-fit tag first), so
-/// each frame is scored by the position of its best-matching tag and the list
-/// is ordered by that score. Ties keep the catalog's own order. Frames with no
-/// matching tag are dropped.
-List<FrameCatalogItem> rankFramesForTags(
-  List<FrameCatalogItem> catalog,
-  List<String> recommendedTags,
-) {
-  int rankOf(FrameCatalogItem item) {
-    var best = -1;
-    for (final tag in item.shapeTags) {
-      final i = recommendedTags.indexOf(tag);
-      if (i >= 0 && (best < 0 || i < best)) best = i;
-    }
-    return best;
-  }
-
-  final scored = <(int, int, FrameCatalogItem)>[];
-  for (var i = 0; i < catalog.length; i++) {
-    final rank = rankOf(catalog[i]);
-    if (rank >= 0) scored.add((rank, i, catalog[i]));
-  }
-  scored.sort((a, b) {
-    final byRank = a.$1.compareTo(b.$1);
-    return byRank != 0 ? byRank : a.$2.compareTo(b.$2);
-  });
-  return [for (final s in scored) s.$3];
 }
