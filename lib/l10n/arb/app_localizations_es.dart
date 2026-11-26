@@ -1227,6 +1227,35 @@ class AppLocalizationsEs extends AppLocalizations {
   String get visagismoRetry => 'Reintentar';
 
   @override
+  String get visagismoPickPhotoTitle => 'Elegí una foto del cliente';
+
+  @override
+  String get visagismoPickPhotoHint =>
+      'De frente, con buena luz y sin anteojos. Al elegirla se escanea el rostro y se prueban los marcos.';
+
+  @override
+  String get visagismoInternalGallery => 'Galería interna';
+
+  @override
+  String get visagismoDeviceGallery => 'Galería del dispositivo';
+
+  @override
+  String get visagismoGalleryEmpty =>
+      'Todavía no hay fotos en la galería interna';
+
+  @override
+  String get visagismoPickFailed => 'No se pudo abrir la foto';
+
+  @override
+  String get visagismoPickAnother => 'Elegir otra foto';
+
+  @override
+  String get visagismoFrameOpacity => 'Opacidad del marco';
+
+  @override
+  String get visagismoFrameShadow => 'Sombra del marco';
+
+  @override
   String get visagismoSaveWithFrame => 'Guardar con marco';
 
   @override

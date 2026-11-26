@@ -2260,6 +2260,60 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get visagismoRetry;
 
+  /// No description provided for @visagismoPickPhotoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a photo of the client'**
+  String get visagismoPickPhotoTitle;
+
+  /// No description provided for @visagismoPickPhotoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Facing the camera, in good light and without glasses. Once chosen, the face is scanned and the frames are tried on.'**
+  String get visagismoPickPhotoHint;
+
+  /// No description provided for @visagismoInternalGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Internal gallery'**
+  String get visagismoInternalGallery;
+
+  /// No description provided for @visagismoDeviceGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Device gallery'**
+  String get visagismoDeviceGallery;
+
+  /// No description provided for @visagismoGalleryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no photos in the internal gallery yet'**
+  String get visagismoGalleryEmpty;
+
+  /// No description provided for @visagismoPickFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the photo'**
+  String get visagismoPickFailed;
+
+  /// No description provided for @visagismoPickAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another photo'**
+  String get visagismoPickAnother;
+
+  /// No description provided for @visagismoFrameOpacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Frame opacity'**
+  String get visagismoFrameOpacity;
+
+  /// No description provided for @visagismoFrameShadow.
+  ///
+  /// In en, this message translates to:
+  /// **'Frame shadow'**
+  String get visagismoFrameShadow;
+
   /// No description provided for @visagismoSaveWithFrame.
   ///
   /// In en, this message translates to:

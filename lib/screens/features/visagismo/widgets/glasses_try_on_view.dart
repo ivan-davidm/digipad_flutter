@@ -38,11 +38,19 @@ class GlassesTryOnView extends StatefulWidget {
     required this.photoPath,
     required this.anchor,
     required this.frame,
+    this.frameOpacity = 1.0,
+    this.frameShadow = false,
   });
 
   final String photoPath;
   final GlassesAnchor? anchor;
   final FrameCatalogItem? frame;
+
+  /// 0..1; the result screen keeps it at 80 % or more.
+  final double frameOpacity;
+
+  /// A soft shadow under the frame, as if it rested on the face.
+  final bool frameShadow;
 
   @override
   State<GlassesTryOnView> createState() => GlassesTryOnViewState();
@@ -185,7 +193,14 @@ class GlassesTryOnViewState extends State<GlassesTryOnView> {
     final placement = _placement();
     if (photo == null || frame == null || placement == null) return null;
     final recorder = ui.PictureRecorder();
-    paintGlassesTryOn(Canvas(recorder), photo, frame.image, placement);
+    paintGlassesTryOn(
+      Canvas(recorder),
+      photo,
+      frame.image,
+      placement,
+      opacity: widget.frameOpacity,
+      shadow: widget.frameShadow,
+    );
     final picture = recorder.endRecording();
     final image = await picture.toImage(photo.width, photo.height);
     picture.dispose();
@@ -240,6 +255,8 @@ class GlassesTryOnViewState extends State<GlassesTryOnView> {
               photo: photo,
               frame: _frame?.image,
               placement: _placement(),
+              opacity: widget.frameOpacity,
+              shadow: widget.frameShadow,
             ),
           ),
         );
@@ -249,47 +266,83 @@ class GlassesTryOnViewState extends State<GlassesTryOnView> {
 }
 
 /// Paints [photo] at its own size from the origin and [frame] over it at
-/// [placement] (photo pixels). Shared by the screen and the export, so the
-/// saved image is exactly what the operator saw.
+/// [placement] (photo pixels), at [opacity] and, with [shadow], over a soft
+/// shadow of itself. Shared by the screen and the export, so the saved image
+/// is exactly what the operator saw.
 void paintGlassesTryOn(
   Canvas canvas,
   ui.Image photo,
   ui.Image? frame,
-  GlassesPlacement? placement,
-) {
+  GlassesPlacement? placement, {
+  double opacity = 1.0,
+  bool shadow = false,
+}) {
   canvas.drawImage(
     photo,
     Offset.zero,
     Paint()..filterQuality = FilterQuality.medium,
   );
   if (frame == null || placement == null) return;
+  final alpha = opacity.clamp(0.0, 1.0);
   canvas
     ..save()
     ..translate(placement.centerX, placement.centerY)
     ..rotate(placement.rotation)
     ..scale(placement.scale)
-    ..translate(-placement.anchorX, -placement.anchorY)
+    ..translate(-placement.anchorX, -placement.anchorY);
+  if (shadow) {
+    // The frame's silhouette, dark, blurred and a little lower (in the
+    // frame's own axes, so it follows the head tilt): a real frame shades the
+    // skin right under it. Sizes are relative to the picture so every frame
+    // gets the same look.
+    final sigma = frame.height * 0.025;
+    canvas
+      ..saveLayer(
+        null,
+        Paint()
+          ..colorFilter = ColorFilter.mode(
+            Colors.black.withValues(alpha: _kShadowAlpha * alpha),
+            BlendMode.srcIn,
+          )
+          ..imageFilter = ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+      )
+      ..drawImage(
+        frame,
+        Offset(0, frame.height * 0.05),
+        Paint()..filterQuality = FilterQuality.medium,
+      )
+      ..restore();
+  }
+  canvas
     ..drawImage(
       frame,
       Offset.zero,
       Paint()
         // The frame pictures are small: smooth upscaling matters.
         ..filterQuality = FilterQuality.high
-        ..isAntiAlias = true,
+        ..isAntiAlias = true
+        ..color = Color.fromRGBO(0, 0, 0, alpha),
     )
     ..restore();
 }
+
+/// How dark the frame's shadow is at 100 % opacity.
+const double _kShadowAlpha = 0.35;
 
 class _TryOnPainter extends CustomPainter {
   _TryOnPainter({
     required this.photo,
     required this.frame,
     required this.placement,
+    required this.opacity,
+    required this.shadow,
   });
 
   final ui.Image photo;
   final ui.Image? frame;
   final GlassesPlacement? placement;
+  final double opacity;
+  final bool shadow;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -302,7 +355,14 @@ class _TryOnPainter extends CustomPainter {
         (size.height - photo.height * scale) / 2,
       )
       ..scale(scale);
-    paintGlassesTryOn(canvas, photo, frame, placement);
+    paintGlassesTryOn(
+      canvas,
+      photo,
+      frame,
+      placement,
+      opacity: opacity,
+      shadow: shadow,
+    );
   }
 
   @override

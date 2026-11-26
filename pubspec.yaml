@@ -138,6 +138,7 @@ flutter:
     - assets/images/visagismo/frames/
     - assets/images/
     - assets/svgs/
+    - assets/svgs/home_icons/
     - assets/videos/home_background.mp4
     - assets/videos/home_background_2.mp4
     - assets/videos/home_background_3.mp4
