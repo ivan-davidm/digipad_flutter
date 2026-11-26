@@ -18,17 +18,32 @@ import 'package:permission_handler/permission_handler.dart';
 const Duration _kMinScanDuration = Duration(milliseconds: 1600);
 
 class VisagismoCubit extends Cubit<VisagismoState> {
-  VisagismoCubit({VisagismoCatalogRepository? catalogRepository})
-    : _catalogRepository = catalogRepository ?? VisagismoCatalogRepository(),
-      super(const VisagismoState()) {
+  VisagismoCubit({
+    VisagismoCatalogRepository? catalogRepository,
+    this.cameraEnabled = true,
+  }) : _catalogRepository = catalogRepository ?? VisagismoCatalogRepository(),
+       super(const VisagismoState()) {
     _checkAvailability();
   }
+
+  /// False: the photo comes only from a gallery (the app's internal gallery
+  /// or the device's) — no camera permission, no camera preview. DigiTower 3D
+  /// Premium runs on the Tótem, whose webcams are often low quality (client
+  /// request 2026-11-26: no photos from the Tótem for now). The Remote
+  /// Control keeps the camera.
+  final bool cameraEnabled;
 
   final VisagismoCatalogRepository _catalogRepository;
   FaceDetector? _faceDetector;
 
   Future<void> _checkAvailability() async {
     emit(state.copyWith(step: VisagismoStep.checkingAvailability));
+
+    if (!cameraEnabled) {
+      emit(state.copyWith(step: VisagismoStep.capture));
+      unawaited(_loadCatalog());
+      return;
+    }
 
     final permissionGranted = await Permission.camera.request().isGranted;
     if (!permissionGranted) {
@@ -95,11 +110,21 @@ class VisagismoCubit extends Cubit<VisagismoState> {
   /// face detection, derives measurements, and classifies — all while the
   /// scanning overlay plays, with a minimum duration so the effect always
   /// reads as intentional rather than an unlucky-fast flash.
-  Future<void> onPhotoCaptured(String jpegPath) async {
+  Future<void> onPhotoCaptured(String jpegPath) =>
+      _scan(jpegPath, fromCamera: true);
+
+  /// Same as [onPhotoCaptured] for a photo picked from a gallery. The file is
+  /// not ours: it is never deleted, and the result screen doesn't save it to
+  /// the gallery again.
+  Future<void> onPhotoPicked(String imagePath) =>
+      _scan(imagePath, fromCamera: false);
+
+  Future<void> _scan(String jpegPath, {required bool fromCamera}) async {
     emit(
       state.copyWith(
         step: VisagismoStep.scanning,
         capturedImagePath: jpegPath,
+        capturedFromCamera: fromCamera,
         lastClassification: null,
         lastAnalysis: null,
       ),
@@ -141,9 +166,12 @@ class VisagismoCubit extends Cubit<VisagismoState> {
     }
   }
 
+  /// Back to the camera / gallery picker for another photo.
   void retakePhoto() {
     final oldPath = state.capturedImagePath;
-    if (oldPath != null) {
+    // Only camera captures are ours to delete — a picked photo may be in the
+    // internal gallery.
+    if (oldPath != null && state.capturedFromCamera) {
       // Best-effort cleanup — these live under the app's own cache/temp
       // dir, not the gallery, so losing one on a rare failure is harmless.
       unawaited(_deleteQuietly(oldPath));
@@ -152,6 +180,7 @@ class VisagismoCubit extends Cubit<VisagismoState> {
       state.copyWith(
         step: VisagismoStep.capture,
         capturedImagePath: null,
+        capturedFromCamera: false,
         lastClassification: null,
         lastAnalysis: null,
       ),

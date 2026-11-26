@@ -28,8 +28,8 @@ import 'package:path_provider/path_provider.dart';
 /// saves the photo WITH the glasses as a new gallery image and sends it to
 /// the Tótem when connected — the plain photo is still saved/sent as before.
 ///
-/// Every capture is saved straight to the app's internal gallery
-/// (`GalleryStorage`). With a [totemLink] (DigiTower 3D Remote Control) it is
+/// Every camera capture is saved straight to the app's internal gallery
+/// (`GalleryStorage`); a photo picked from a gallery is not saved again. With a [totemLink] (DigiTower 3D Remote Control) it is
 /// also sent to the Tótem when connected — right away, or as soon as the
 /// Tótem gets paired from this screen. Without one (DigiTower 3D Premium,
 /// which runs on the Tótem itself) every Tótem control is hidden.
@@ -73,6 +73,11 @@ class _VisagismoResultScreenState extends State<VisagismoResultScreen> {
   FrameCatalogItem? _pickedFrame;
   String? _tryOnPhotoPath;
   bool _savingTryOn = false;
+
+  // Frame look (client request 2026-11-26): a bit see-through and a soft
+  // shadow so it reads less "pasted on". Kept across photos and frames.
+  double _frameOpacity = 1.0;
+  bool _frameShadow = true;
 
   FrameCatalogItem? _tryOnFrame(
     String? imagePath,
@@ -137,8 +142,13 @@ class _VisagismoResultScreenState extends State<VisagismoResultScreen> {
   /// later call (e.g. the Tótem was paired after the capture) sends the copy
   /// that is still pending. Results are shown as snackbars.
   Future<void> _handleNewCapture(BuildContext context) async {
-    final imagePath = context.read<VisagismoCubit>().state.capturedImagePath;
+    final state = context.read<VisagismoCubit>().state;
+    final imagePath = state.capturedImagePath;
     if (imagePath == null || imagePath.isEmpty) return;
+    // A photo picked from a gallery is already somewhere: saving it again
+    // would duplicate it in the internal gallery. "Guardar con marco" still
+    // saves (and sends) the try-on.
+    if (!state.capturedFromCamera) return;
 
     // Read before the `await` — this widget may be disposed by the time the
     // save finishes, and `context` must not be touched after that gap.
@@ -269,17 +279,38 @@ class _VisagismoResultScreenState extends State<VisagismoResultScreen> {
                       photoPath: imagePath,
                       anchor: state.lastAnalysis?.glasses,
                       frame: tryOnFrame,
+                      frameOpacity: _frameOpacity,
+                      frameShadow: _frameShadow,
                     ),
                     if (tryOnFrame != null)
                       Positioned(
                         left: 12,
                         right: 12,
                         bottom: 12,
-                        child: _TryOnBar(
-                          totemLink: widget.totemLink,
-                          saving: _savingTryOn,
-                          onReset: () => _tryOnKey.currentState?.resetAdjust(),
-                          onSave: () => _saveTryOn(context, tryOnFrame),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: _FrameLookControls(
+                                opacity: _frameOpacity,
+                                shadow: _frameShadow,
+                                onOpacity: (v) =>
+                                    setState(() => _frameOpacity = v),
+                                onShadow: (v) =>
+                                    setState(() => _frameShadow = v),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            _TryOnBar(
+                              totemLink: widget.totemLink,
+                              saving: _savingTryOn,
+                              onReset: () =>
+                                  _tryOnKey.currentState?.resetAdjust(),
+                              onSave: () => _saveTryOn(context, tryOnFrame),
+                            ),
+                          ],
                         ),
                       ),
                   ],
@@ -323,6 +354,75 @@ class _VisagismoResultScreenState extends State<VisagismoResultScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Minimum frame opacity: below 80 % the frame stops looking like a real
+/// one (client request 2026-11-26).
+const double kMinFrameOpacity = 0.8;
+
+/// Over the photo, above [_TryOnBar]: frame opacity (80–100 %) and the
+/// frame's soft shadow on/off.
+class _FrameLookControls extends StatelessWidget {
+  const _FrameLookControls({
+    required this.opacity,
+    required this.shadow,
+    required this.onOpacity,
+    required this.onShadow,
+  });
+
+  final double opacity;
+  final bool shadow;
+  final ValueChanged<double> onOpacity;
+  final ValueChanged<bool> onShadow;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isLarge = MediaQuery.sizeOf(context).shortestSide >= 600;
+    return Container(
+      constraints: BoxConstraints(maxWidth: isLarge ? 420 : 320),
+      padding: const EdgeInsets.only(left: 12, right: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Row(
+        children: [
+          Tooltip(
+            message: l10n.visagismoFrameOpacity,
+            child: const Icon(Icons.opacity, color: Colors.white70, size: 20),
+          ),
+          Expanded(
+            child: Slider(
+              value: opacity.clamp(kMinFrameOpacity, 1.0),
+              min: kMinFrameOpacity,
+              max: 1.0,
+              divisions: 4, // 80, 85, 90, 95, 100 %
+              label: '${(opacity * 100).round()} %',
+              activeColor: Colors.white,
+              inactiveColor: Colors.white24,
+              onChanged: onOpacity,
+            ),
+          ),
+          SizedBox(
+            width: 44,
+            child: Text(
+              '${(opacity * 100).round()} %',
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.visagismoFrameShadow,
+            isSelected: shadow,
+            onPressed: () => onShadow(!shadow),
+            icon: const Icon(Icons.blur_off_rounded, color: Colors.white38),
+            selectedIcon: const Icon(Icons.blur_on_rounded, color: Colors.white),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -429,10 +529,17 @@ class VisagismoResultActions extends StatelessWidget {
               );
             },
           ),
+        // Without a camera "Repetir" goes back to the gallery picker.
         IconButton(
-          tooltip: l10n.visagismoRetake,
+          tooltip: cubit.cameraEnabled
+              ? l10n.visagismoRetake
+              : l10n.visagismoPickAnother,
           onPressed: cubit.retakePhoto,
-          icon: const Icon(Icons.replay),
+          icon: Icon(
+            cubit.cameraEnabled
+                ? Icons.replay
+                : Icons.add_photo_alternate_outlined,
+          ),
         ),
       ],
     );

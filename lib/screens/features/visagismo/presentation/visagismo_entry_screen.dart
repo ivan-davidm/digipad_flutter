@@ -2,6 +2,7 @@ import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_cubit
 import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_state.dart';
 import 'package:digipad_flutter/screens/features/visagismo/data/visagismo_totem_link.dart';
 import 'package:digipad_flutter/screens/features/visagismo/presentation/visagismo_capture_screen.dart';
+import 'package:digipad_flutter/screens/features/visagismo/presentation/visagismo_photo_source_screen.dart';
 import 'package:digipad_flutter/screens/features/visagismo/presentation/visagismo_result_screen.dart';
 import 'package:digipad_flutter/screens/features/visagismo/presentation/visagismo_scanning_overlay.dart';
 import 'package:digipad_flutter/l10n/arb/app_localizations.dart';
@@ -10,7 +11,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Gating screen: checks camera availability before ever creating the
-/// camera preview.
+/// camera preview. Without a camera (`VisagismoCubit.cameraEnabled` false)
+/// the photo is picked from a gallery instead.
 class VisagismoEntryScreen extends StatelessWidget {
   const VisagismoEntryScreen({super.key, this.totemLink});
 
@@ -45,7 +47,9 @@ class VisagismoEntryScreen extends StatelessWidget {
             case VisagismoStep.unavailable:
               return _UnavailableView(state: state);
             case VisagismoStep.capture:
-              return const VisagismoCaptureScreen();
+              return context.read<VisagismoCubit>().cameraEnabled
+                  ? const VisagismoCaptureScreen()
+                  : const VisagismoPhotoSourceScreen();
             case VisagismoStep.scanning:
               return VisagismoScanningOverlay(
                 imagePath: state.capturedImagePath!,

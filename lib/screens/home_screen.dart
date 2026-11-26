@@ -14,11 +14,12 @@ import 'package:digipad_flutter/screens/features/visual_health/cubit/visual_heal
 import 'package:digipad_flutter/screens/features/visual_health/presentation/visual_health_screen.dart';
 import 'package:digipad_flutter/screens/features/visagismo/cubit/visagismo_cubit.dart';
 import 'package:digipad_flutter/screens/features/visagismo/presentation/visagismo_entry_screen.dart';
-import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:digipad_flutter/screens/home/home_arch_layout.dart';
 import 'package:digipad_flutter/screens/home/home_background.dart';
 import 'package:digipad_flutter/screens/home/home_background_controller.dart';
+import 'package:digipad_flutter/screens/home/home_icons.dart';
 import 'package:digipad_flutter/l10n/l10n.dart';
 import 'package:digipad_flutter/main.dart';
 import 'package:digipad_flutter/digi_locale.dart';
@@ -89,73 +90,55 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   // ── Module definitions (order = visual top-to-bottom) ──────────────────────
-  // Arch layout (restored 2026-11-24 from `origin/fix-digitower-misc`, it was
-  // lost when the home background work landed): `left` goes 75→30→75 so the
-  // cards bow out in the middle; `top` fractions are evenly spaced from 0.02
-  // to 0.72 plus [_kMenuTopOffset] (just below the top bar). The DTCP logo
-  // sits bottom-right, out of the arch's way (product request 2026-11-24).
+  // Icons: custom SVGs from `home_icons.dart` (`kHomeIconChoice`); `icon` is
+  // only for modules without one (Photo Sync).
+  // Arch layout (restored 2026-11-24 from `origin/fix-digitower-misc`; a
+  // straight column once replaced it by accident — keep the arch): positions
+  // come from `homeArchPosition` (evenly spaced tops, curved `left`), plus
+  // [_kMenuTopOffset] (just below the top bar). The DTCP logo sits
+  // bottom-right, out of the arch's way (product request 2026-11-24).
   List<_ModuleDef> _modules(BuildContext context) => [
     _ModuleDef(
       key: 'virtual_mirror',
       title: context.l10n.menuVirtualMirror,
-      icon: Icons.crop_portrait_outlined,
       color: Colors.white,
-      top: MediaQuery.of(context).size.height * 0.02,
-      left: 75,
     ),
     _ModuleDef(
       key: 'simulations',
       title: context.l10n.menuSimulations,
-      icon: Icons.auto_fix_high,
       color: const Color(0xFF4CAF50),
-      top: MediaQuery.of(context).size.height * 0.1367,
-      left: 60,
     ),
     _ModuleDef(
       key: 'lenses_3d',
       title: context.l10n.menuLenses3D,
-      icon: CupertinoIcons.eyeglasses,
       color: Colors.white,
-      top: MediaQuery.of(context).size.height * 0.2533,
-      left: 45,
     ),
     // 'cosmetic_lenses' hidden per product decision (2026-11-05) — not
     // deleted, just no longer in this list. To bring it back: re-add its
     // _ModuleDef (icon: Icons.remove_red_eye_outlined, color: 0xFF2196F3,
     // key/title: menuCosmeticLenses) and its `_navigateToModule` branch
-    // (CosmeticLensesCubit/CosmeticLensesScreen), bump `_moduleCount` back to
-    // 8, and re-tune every module's `top` fraction for 8 slots again.
+    // (CosmeticLensesCubit/CosmeticLensesScreen) and bump `_moduleCount` back
+    // to 8 (`homeArchPosition` spreads the cards for any count).
     _ModuleDef(
       key: 'measurements',
       title: context.l10n.menuMeasurements,
-      icon: Icons.straighten,
       color: const Color(0xFFFB8C00),
-      top: MediaQuery.of(context).size.height * 0.37,
-      left: 30,
     ),
     _ModuleDef(
       key: 'visagismo',
       title: context.l10n.menuVisagismo,
-      icon: Icons.face,
       color: const Color(0xFF9C27B0),
-      top: MediaQuery.of(context).size.height * 0.4867,
-      left: 45,
     ),
     _ModuleDef(
       key: 'visual_health',
       title: context.l10n.menuVisualHealth,
-      icon: Icons.add_rounded,
       color: const Color(0xFFFFD600),
-      top: MediaQuery.of(context).size.height * 0.6033,
-      left: 60,
     ),
     _ModuleDef(
       key: 'photo_sync',
       title: context.l10n.menuPhotoSync,
       icon: Icons.sync_alt_rounded,
       color: const Color(0xFF00BFA6),
-      top: MediaQuery.of(context).size.height * 0.72,
-      left: 75,
     ),
   ];
 
@@ -192,8 +175,8 @@ class _HomeScreenState extends State<HomeScreen>
                   // ── Module cards in an arch, just below the top bar ───────────
                   for (int i = 0; i < modules.length; i++)
                     Positioned(
-                      top: modules[i].top + _kMenuTopOffset,
-                      left: modules[i].left,
+                      top: _archPosition(context, i).dy + _kMenuTopOffset,
+                      left: _archPosition(context, i).dx,
                       child: _AnimatedModuleItem(
                         index: i,
                         total: _moduleCount,
@@ -289,6 +272,12 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  Offset _archPosition(BuildContext context, int index) => homeArchPosition(
+    index: index,
+    count: _moduleCount,
+    height: MediaQuery.sizeOf(context).height,
+  );
+
   // ── Logo ──────────────────────────────────────────────────────────────────
 
   /// Space kept free above the arch for the TÓTEM badge and language picker.
@@ -362,7 +351,9 @@ class _HomeScreenState extends State<HomeScreen>
                   height: iconSize,
                   alignment: Alignment.center,
                   decoration: const BoxDecoration(shape: BoxShape.circle),
-                  child: Icon(def.icon, color: def.color, size: iconSize),
+                  child:
+                      homeModuleIcon(def.key, iconSize) ??
+                      Icon(def.icon, color: def.color, size: iconSize),
                 ),
                 const SizedBox(width: 12),
                 Flexible(
@@ -430,13 +421,15 @@ class _HomeScreenState extends State<HomeScreen>
       );
     } else if (moduleId == 'visagismo') {
       // This app already runs AS the Tótem (see the "TÓTEM activa" badge
-      // above) — Visagismo captures save straight to this app's own
-      // internal gallery (see VisagismoResultScreen), no pairing needed.
+      // above) — no Tótem link, try-ons save to this app's own gallery.
+      // No camera for now: the photo comes from the internal or the device
+      // gallery (client request 2026-11-26 — the Tótem's low-quality webcams
+      // hurt the result). Set `cameraEnabled: true` to bring the camera back.
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => BlocProvider(
-            create: (_) => VisagismoCubit(),
+            create: (_) => VisagismoCubit(cameraEnabled: false),
             child: const VisagismoEntryScreen(),
           ),
         ),
@@ -493,18 +486,15 @@ class _HomeScreenState extends State<HomeScreen>
 class _ModuleDef {
   final String key;
   final String title;
-  final IconData icon;
+  /// Fallback when the module has no custom icon (see `kHomeIconChoice`).
+  final IconData? icon;
   final Color color;
-  final double top;
-  final double left;
 
   const _ModuleDef({
     required this.key,
     required this.title,
-    required this.icon,
+    this.icon,
     required this.color,
-    required this.top,
-    required this.left,
   });
 }
 

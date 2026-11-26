@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Simulaciones C: Corredor relleno -->
+  <defs><linearGradient id="grad_simulations_c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".9"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient></defs><rect x="2" y="8" width="9" height="8.5" rx="3"/><rect x="13" y="8" width="9" height="8.5" rx="3" fill="url(#grad_simulations_c)"/><path d="M11 11Q12 9.8 13 11"/><path stroke="none" fill="#FFFFFF" fill-opacity=".45" d="M2.6 9.2H10.4V10.8Q7.6 11.6 7.5 13.2V16.5H5.5V13.2Q5.4 11.6 2.6 10.8Z"/>
+</svg>

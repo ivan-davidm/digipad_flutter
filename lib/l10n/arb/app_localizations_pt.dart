@@ -1221,6 +1221,34 @@ class AppLocalizationsPt extends AppLocalizations {
   String get visagismoRetry => 'Tentar novamente';
 
   @override
+  String get visagismoPickPhotoTitle => 'Escolha uma foto do cliente';
+
+  @override
+  String get visagismoPickPhotoHint =>
+      'De frente, com boa luz e sem óculos. Ao escolhê-la, o rosto é escaneado e as armações são provadas.';
+
+  @override
+  String get visagismoInternalGallery => 'Galeria interna';
+
+  @override
+  String get visagismoDeviceGallery => 'Galeria do dispositivo';
+
+  @override
+  String get visagismoGalleryEmpty => 'Ainda não há fotos na galeria interna';
+
+  @override
+  String get visagismoPickFailed => 'Não foi possível abrir a foto';
+
+  @override
+  String get visagismoPickAnother => 'Escolher outra foto';
+
+  @override
+  String get visagismoFrameOpacity => 'Opacidade da armação';
+
+  @override
+  String get visagismoFrameShadow => 'Sombra da armação';
+
+  @override
   String get visagismoSaveWithFrame => 'Salvar com armação';
 
   @override
