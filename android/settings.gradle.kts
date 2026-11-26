@@ -18,10 +18,11 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    // Bumped from 8.7.3: SceneView 4.31.0 (Visagismo AR feature) pulls in
-    // androidx.core:core-ktx 1.18.0, which requires AGP 8.9.1+. Gradle 8.13
-    // (already the project's wrapper version) supports this AGP line.
-    id("com.android.application") version "8.9.1" apply false
+    // AGP 9 + Gradle 9.5 (wrapper): required by Flutter 3.50. The opt-outs in
+    // gradle.properties (builtInKotlin/newDsl = false) keep the AGP 8
+    // behaviour Flutter plugins still expect — remove them once plugins
+    // support AGP 9's defaults (they go away in a future AGP).
+    id("com.android.application") version "9.3.1" apply false
     // START: FlutterFire Configuration
     id("com.google.gms.google-services") version("4.3.15") apply false
     // END: FlutterFire Configuration

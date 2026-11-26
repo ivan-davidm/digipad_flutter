@@ -1,0 +1,23 @@
+group 'xyz.justsoft.video_thumbnail'
+version '1.0-SNAPSHOT'
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 36
+    namespace 'xyz.justsoft.video_thumbnail'
+
+    defaultConfig {
+        minSdkVersion 21
+    }
+    lint {
+        disable 'InvalidPackage'
+    }
+}
