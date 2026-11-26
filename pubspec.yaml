@@ -180,3 +180,12 @@ flutter_launcher_icons:
     generate: false
   linux:
     generate: false
+
+# TEMPORAL: video_thumbnail 0.5.6 (última versión publicada, sin mantenimiento)
+# usa jcenter(), eliminado en Gradle 9, que exige Flutter 3.50. Se usa una copia
+# con el build.gradle corregido (jcenter -> mavenCentral, sin buildscript viejo).
+# Reemplazar por un paquete mantenido cuando se pueda (lo usa la galería del
+# Espejo Virtual).
+dependency_overrides:
+  video_thumbnail:
+    path: third_party/video_thumbnail
