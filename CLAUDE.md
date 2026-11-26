@@ -8,7 +8,8 @@
 A professional optical measurement and lens-simulation app for ópticas (optical shops), in Flutter for **Android and iOS** (portrait only). It is typically run on a **Tótem**: a kiosk device (tablet / Android TV-class box) in the shop. Operators send it photos from their phones using the companion app, and the shop measures and demonstrates lenses with them.
 
 - Version `4.0.1+29` · Dart `>=3.8.1 <4.0.0` · Android `applicationId` `ar.com.digipad`, `minSdk 26` · iOS bundle id `ar.com.digipad`
-- Languages: **es / en / pt** (all three ARB files have the same ~305 keys)
+- Toolchain: **Flutter 3.50.x stable**, Gradle **9.5.0** (wrapper), AGP **9.3.1** — see trap 10
+- Languages: **es / en / pt** (all three ARB files have the same ~375 keys)
 - State management: **BLoC/Cubit** (`flutter_bloc`); `provider` only inside `optical_editor_screen.dart`
 - Local storage: **Sembast** (`gallery.db`, `measurements.db`) + SharedPreferences. Cloud: Firebase Firestore (activation, visagismo catalog)
 
@@ -23,6 +24,7 @@ A professional optical measurement and lens-simulation app for ópticas (optical
 7. **ML Kit needs an R8 keep rule in release builds.** `android/app/proguard-rules.pro` keeps `ComponentRegistrar` implementations (`-keep class * implements com.google.firebase.components.ComponentRegistrar { <init>(); }`). Without it R8 strips their constructors, ML Kit never initialises and every face detection fails with a NullPointerException — debug builds work, release doesn't. The visagismo reports detector failures as `FaceCaptureIssue.detectorError` (never as "no face"). If you add another ML Kit plugin, check a release build.
 8. **Some modules are hidden on purpose** (product decisions recorded as dated comments in code). See "Hidden / flagged-off features". They are not broken.
 9. Orphans: `lib/home_view.dart` and `lib/splash_screen.dart` are not referenced anywhere. `script.py` and `convert_images.sh` are stale one-off scripts with machine-specific paths (`q:\REPO\digipad\…`, `/Volumes/KINGSTON/…`).
+10. **Build needs Flutter 3.50+** (migration merged 2026-11-26, PR #11): Gradle 9 removed `jcenter()` and AGP 9 rejects `package=` in the manifest. Two temporary workarounds live in the repo — don't remove them without replacing them: `android/gradle.properties` opts out of AGP 9 defaults (`android.builtInKotlin=false`, `android.newDsl=false`, `android.uniquePackageNames=false`, `kotlin.jvm.target.validation.mode=warning`) because Flutter plugins still expect AGP 8 behaviour (they go away in a future AGP); and `video_thumbnail` (unmaintained, used by the virtual mirror's gallery) is a patched copy in `third_party/video_thumbnail` via `dependency_overrides`. An older Flutter (or a CI on one) no longer builds this repo.
 
 ## App flow
 
@@ -41,7 +43,7 @@ main.dart
 | `simulations` | `MainSimulationsGridScreen` → `SimulationViewerScreen` | Scenario-based lens demos (myopia, monofocal, multifocal, bifocal, photochromic, polarized, blue filter, …). Data in `simulations/data/simulation_data.dart` (~1.7k lines) + images in `assets/images/simulations/` |
 | `lenses_3d` | `Lenses3DScreen` | Lens image viewer, assets in `assets/images/lenses_3d/` |
 | `measurements` | `MeasurementHubScreen` | The core feature — see below |
-| `visagismo` | `VisagismoEntryScreen` | Face-shape detection (ML Kit), real frames ranked by match, try-on on the photo. **No camera in this app** (`VisagismoCubit(cameraEnabled: false)`): photo from internal or device gallery |
+| `visagismo` | `VisagismoEntryScreen` | Face-shape detection (ML Kit), real frames ranked by match, try-on on the photo. **No camera in this app** (`VisagismoCubit(cameraEnabled: false)`, client request 2026-11-26): photo from internal or device gallery |
 | `visual_health` | `VisualHealthScreen` | Vision test charts/images |
 | `photo_sync` | `PhotoSyncRoleScreen` | Tótem host role — see "Photo Sync" |
 
@@ -107,7 +109,7 @@ Received files are written under `<documents>/totem_received/` and registered in
 ## Visagismo — `lib/screens/features/visagismo/`
 
 **Shared module (since 2026-11-25): the SAME code as `../digipad_totem/lib/features/visagismo/`** — only the package prefix in the imports differs (`digipad_flutter/screens/features/…` ↔ `digipad_totem/features/…`). Tests are shared the same way (`test/screens/features/visagismo/`). Change one → copy it to the other with that rename. Everything app-specific stays outside the module:
-- **Tótem link** — `data/visagismo_totem_link.dart` is an interface the host app may pass to `VisagismoEntryScreen(totemLink: …)`. The Remote Control passes its own (`ClientTotemLink`, over its `ClientCubit`) to send photos to the Tótem. **This app runs on the Tótem, so it passes nothing**: the result screen then only saves to the local gallery and hides every Tótem control.
+- **Tótem link** — `data/visagismo_totem_link.dart` is an interface the host app may pass to `VisagismoEntryScreen(totemLink: …)`. The Remote Control passes its own (`ClientTotemLink`, over its `ClientCubit`) to send photos to the Tótem, and opens the module both from its home and from its connected screen (it must always be visible there; only its Simulaciones needs a Tótem). **This app runs on the Tótem, so it passes nothing**: the result screen then only saves to the local gallery and hides every Tótem control.
 - **Translations** — every key the module uses starts with `visagismo` (50 keys: texts, frame names `visagismoFrameName`/`visagismoFrameDetail` by `frameId`, face shapes, match levels, diagnostics). Keep them identical in both repos' ARB files.
 
 **Photo source:** `VisagismoCubit(cameraEnabled: …)`. This app passes `false` (client request 2026-11-26: the Tótem's webcams are low quality) → `VisagismoPhotoSourceScreen` (internal gallery via `GalleryStorage` / device gallery via `image_picker`); picking a photo scans it right away, the picked file is never deleted nor re-saved to the gallery (`state.capturedFromCamera`). The Remote Control keeps the camera (default `true`).
@@ -126,10 +128,11 @@ Flow: capture → `google_mlkit_face_detection` (contours + eye landmarks, accur
 
 ## Hidden / flagged-off features
 
-- **Cosmetic lenses**: hidden from Home (2026-11-05). Code intact; the comment in `home_screen.dart` explains how to bring it back (re-add `_ModuleDef` + `_navigateToModule` branch, set `_moduleCount` to 8, re-tune each card's `top`).
-- **Measurements hub — "New measurement"**: `_kShowNewMeasurementTile = false`.
+- **Cosmetic lenses**: hidden from Home (2026-11-05). Code intact; the comment in `home_screen.dart` explains how to bring it back (re-add `_ModuleDef` + `_navigateToModule` branch, set `_moduleCount` to 8 — `homeArchPosition` spreads the cards for any count).
+- **Measurements hub — "New measurement"**: `_kShowNewMeasurementTile = false` ("Medición remota" is on: `_kShowRemoteMeasurementTile = true`).
 - **Photo sync — client role** hidden in this app.
-- `kBypassActivation = true` (see traps).
+- **Visagismo camera** off in this app (`cameraEnabled: false` in `home_screen.dart`, 2026-11-26); `true` brings the camera back.
+- **Activation bypass** exists only as a build flag (`--dart-define=BYPASS_ACTIVATION=true`), off by default (trap 1).
 
 ## Firebase
 
@@ -150,9 +153,13 @@ lib/
 ├── l10n/{l10n.dart, arb/*.arb, arb/app_localizations*.dart (generated)}
 └── screens/
     ├── home_screen.dart
-    ├── home/{home_background_controller,home_background}.dart   # wallpaper + videos + gestures + settings sheet
+    ├── home/home_background_controller.dart, home_background.dart   # wallpaper + videos + gestures + settings sheet
+    ├── home/home_arch_layout.dart                                  # card positions (even spacing, curved arch)
+    ├── home/home_icons.dart                                        # custom SVG icons + kHomeIconChoice
     ├── activation/{cubit,data,presentation}
     └── features/{measurements,simulations,lenses_3d,virtual_mirror,visagismo,visual_health,cosmetic_lenses}
+assets/svgs/home_icons/                         # <module key>_<a|b|c>.svg — all 3 variants of each home icon
+third_party/video_thumbnail/                    # patched plugin copy for Gradle 9 (trap 10)
 ```
 
 Feature modules follow `cubit/` + `presentation/` (+ `widgets/`, `data/`, `models/`). Measurements is the exception: plain `StatefulWidget`s + `OpticalController`.
@@ -171,14 +178,15 @@ flutter pub get
 flutter run
 flutter analyze
 flutter test                 # see note below about test/widget_test.dart
-flutter build apk --release
+flutter build apk --release     # release is signed with the DEBUG keystore (android/app/build.gradle.kts)
+flutter build apk --debug
 flutter build ios --release
 
 # After editing lib/l10n/arb/app_*.arb (output is committed):
 flutter gen-l10n             # l10n.yaml: arb-dir lib/l10n/arb, template app_en.arb, class AppLocalizations
 ```
 
-Tests (`test/`): `activation_device_collision_test`, `screens/features/visagismo/{face_shape_classifier,face_analysis,frame_catalog,glasses_fit}_test`, `screens/features/measurements/optical_lens_mirror_test`, `screens/home/home_background_controller_test`. **`test/widget_test.dart` is the untouched Flutter "Counter" template from the first commit and always fails** (this app has no counter and `MyApp` needs Firebase) — ignore it or delete it, don't "fix" the app for it.
+Tests (`test/`, 77 passing): `activation_device_collision_test`, `screens/activation/bypass_flag_test`, `screens/features/visagismo/{face_shape_classifier,face_analysis,frame_catalog,glasses_fit,visagismo_cubit_gallery}_test`, `screens/features/measurements/optical_lens_mirror_test`, `screens/home/{home_background_controller,home_arch_layout,home_icons}_test`. Run them with `flutter test $(find test -name "*_test.dart" ! -name widget_test.dart)`. **`test/widget_test.dart` is the untouched Flutter "Counter" template from the first commit and always fails** (this app has no counter and `MyApp` needs Firebase) — ignore it or delete it, don't "fix" the app for it.
 
 Strings: `context.l10n.someKey` (extension in `lib/l10n/l10n.dart`). Add every key to **all three** ARB files (`app_en.arb` is the template). The old docs mention `intl_utils:generate` — this repo uses Flutter's built-in `gen-l10n` (`flutter: generate: true`).
 
@@ -186,7 +194,7 @@ Icons/splash: `flutter_launcher_icons` (`assets/images/ic_launcher.png`) and `fl
 
 ## Git workflow
 
-Default branch `main`; work lands through pull requests from feature branches (e.g. `feature/visagismo-ar`). Other remote branches exist (`Panthoscopic`, `WIFI-SHARE`, `digitower-v1`, `digipad-simulation-3d-fixes`, `fix-digitower-misc`).
+Default branch `main`; work lands through pull requests from short-lived branches named `feat/…`, `fix/…`, `chore/…`, deleted once merged. Commit messages are in Spanish, conventional style (`feat(visagismo): …`). Older remote branches still exist (`digitower-v1`, `digipad-simulation-3d-fixes`, `fix-digitower-misc`, `feature/visagismo-ar`, `release/digitower-4.0.0-b28`, …); `Panthoscopic` and `WIFI-SHARE` were deleted 2026-11-26 (fully contained in `main`).
 
 ## Notes for AI agents
 
